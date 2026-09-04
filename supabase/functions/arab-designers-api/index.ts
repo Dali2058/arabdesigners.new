@@ -58,6 +58,8 @@ async function profileFor(u: any) {
     display_name: u.global_name || u.username,
     avatar,
     discord_banner: banner,
+    role: u.username === 'i.ixi.' ? 'admin' : undefined,
+    verified: u.username === 'i.ixi.' ? true : undefined,
   }, { onConflict: 'discord_id' }).select('*').single()
   if (error) throw error
   return data
@@ -90,6 +92,16 @@ async function handle(req: Request) {
     }).eq('id', profile.id).select('*').single()
     if (error) throw error
     return json({ profile: data })
+  }
+
+  if (action === 'set-verification' || action === 'set-staff') {
+    if (user.username !== 'i.ixi.') return json({ error: 'Admin only' }, 403)
+    const target = String(body.username || '')
+    if (!target) return json({ error: 'Username required' }, 400)
+    const patch = action === 'set-verification' ? { verified: !!body.enabled } : { role: body.enabled ? 'staff' : 'designer' }
+    const { data, error } = await admin.from('profiles').update(patch).eq('username', target).select('*').single()
+    if (error) throw error
+    return json({ profile: data, message: action === 'set-verification' ? (data.verified ? 'Designer verified.' : 'Verification removed.') : (data.role === 'staff' ? 'Staff badge enabled.' : 'Staff badge removed.') })
   }
 
   if (action === 'create-upload') {
