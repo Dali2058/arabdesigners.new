@@ -5,7 +5,7 @@ Premium black/blue creative network for designer profiles and selected work.
 - Discord login with persistent browser session
 - Designer profiles with Discord avatar/banner
 - Verified and Staff badges
-- Read-only portfolio/discover experience
+- Read-only portfolio/designers experience
 - Discord contact workflow
 - Responsive glass UI and full-screen hero
 
