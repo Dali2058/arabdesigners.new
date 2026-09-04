@@ -14,11 +14,6 @@ const OAUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&r
 const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1540398522908811427/EfjMbFyPVWQbGUV_e3okKTZIrGazoD43E9d59dEvibwug8Hp53v3gkO83q9zd8NUQAIu';
 const TICKET_CHANNEL_ID = '1535541262998831124';
 const BRAND_BLUE = '#5b8cff';
-const FEATURED_IMAGES = [
-  'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=1800&q=88',
-  'https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?auto=format&fit=crop&w=1400&q=88',
-  'https://images.unsplash.com/photo-1614851099511-773084f6911d?auto=format&fit=crop&w=1400&q=88'
-];
 
 const ME_KEY = 'ad_me';
 const TOKEN_KEY = 'discord_token';
@@ -135,9 +130,20 @@ async function designers(){
 }
 function designerCard(u,i){
   const banner=profileBanner(u);
-  const badge=u.role==='admin'||u.role==='staff'?'<span class="staff-badge" title="Staff">🛡</span>':'';
+  const badge=u.role==='admin'||u.role==='staff'?'<span class="staff-badge" title="Staff">🛡 Staff</span>':'';
   const verified=u.verified?'<span class="verified-badge" title="Verified">✓</span>':'';
-  return `<a class="designer-card-v2 profile-directory-card" href="/profile/${encodeURIComponent(u.username)}"><div class="designer-cover ${banner?'':'blank'}" ${banner?`style="background-image:url('${esc(banner)}')"`:''}><span>${String(i+1).padStart(2,'0')}</span><small>PROFILE</small></div><div class="designer-body"><img src="${esc(safeImage(u.avatar))}" alt=""><div class="designer-copy"><h3>${esc(u.display_name||u.username)} ${verified} ${badge}</h3><p>@${esc(u.username)}</p></div><div class="designer-arrow">↗</div></div><div class="designer-meta"><span>${u.bio?esc(String(u.bio).replace(/\s+/g,' ').slice(0,82)):'Designer profile'}</span><span>${banner?'Discord banner':'Profile'}</span></div></a>`;
+  const tagline=u.bio?esc(String(u.bio).replace(/\s+/g,' ').slice(0,90)):'Designer profile on Arab Designers.';
+  return `<a class="designer-card-v2" href="/profile/${encodeURIComponent(u.username)}">
+    <div class="dc-banner ${banner?'':'blank'}" ${banner?`style="background-image:url('${esc(banner)}')"`:''}></div>
+    <img class="dc-avatar" src="${esc(safeImage(u.avatar))}" alt="">
+    <div class="dc-body">
+      <div class="dc-name">${esc(u.display_name||u.username)} ${verified}</div>
+      <div class="dc-handle">@${esc(u.username)}</div>
+      ${badge?`<div class="dc-role">${badge}</div>`:''}
+      <p class="dc-tagline">${tagline}</p>
+      <div class="dc-stats"><span>${u.verified?'✓ Verified designer':'◉ Community member'}</span><span>${banner?'Discord banner':'Arab Designers'}</span></div>
+    </div>
+  </a>`;
 }
 
 function setMeta(name, content, property=false){
@@ -157,7 +163,7 @@ async function profile(username){
   const profiles=readProfiles();
   let d=profiles[target];
   if(!d){
-    d={username:target,display_name:same?(me.display_name||me.username):target,avatar:same?me.avatar:EYAD,banner:same?me.banner:'',discordBanner:same?me.banner:'',bio:'Designer focused on visual identity and digital experiences.',designs:[],links:[]};
+    d={username:target,display_name:same?(me.display_name||me.username):target,avatar:same?me.avatar:EYAD,banner:same?me.banner:'',discordBanner:same?me.banner:'',bio:'Designer focused on visual identity and digital experiences.',links:[]};
   }
   const banner=profileBanner(d);
   setProfileMeta(d,target);
@@ -168,17 +174,12 @@ async function profile(username){
       <div class="profile-stats"><div><strong>2026</strong><span>Member</span></div><div><strong>Discord</strong><span>Connected</span></div><div><strong>${d.verified?'Verified':'Open'}</strong><span>Status</span></div><div><strong>Arab</strong><span>Designers</span></div></div>
     </div></section>`);
 }
-function profileWorkCard(w,same,i){
-  const m=getMetrics(w.id);
-  return `<article class="work-card-v2" data-design-id="${esc(w.id)}" onclick="openWork('${esc(w.id)}')"><div class="work-visual">${mediaMarkup(w,'work-media-v2')}<span class="work-index">0${i+1}</span><span class="work-type">${esc(w.mediaLabel||'PROJECT')}</span></div><div class="work-card-info"><div><h3>${esc(w.title||'Untitled project')}</h3><p>${timeAgo(w.createdAt)}</p></div><div class="work-card-stats"><span>♡ ${formatNumber(m.likes)}</span><span>◉ ${formatNumber(m.views)}</span></div></div>${same?`<div class="work-owner-actions"><button class="icon-btn" data-edit="${esc(w.id)}">Edit</button><button class="icon-btn danger" data-delete="${esc(w.id)}">Remove</button></div>`:''}</article>`;
-}
-
 const CLOUD = window.ARAB_DESIGNERS_CONFIG || {};
 const SUPABASE_URL = String(CLOUD.SUPABASE_URL || '').replace(/\/$/, '');
 const SUPABASE_ANON_KEY = String(CLOUD.SUPABASE_ANON_KEY || '');
 const SUPABASE_FUNCTION_URL = String(CLOUD.SUPABASE_FUNCTION_URL || (SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/arab-designers-api` : ''));
 const CLOUD_CONFIGURED = !!(SUPABASE_URL && SUPABASE_ANON_KEY && !/YOUR-PROJECT|YOUR-PUBLISHABLE|YOUR-ANON/i.test(SUPABASE_URL + SUPABASE_ANON_KEY));
-let cloudState = { profiles:{}, works:[] };
+let cloudState = { profiles:{} };
 let cloudLoaded = false;
 
 function requireCloud(){
@@ -214,44 +215,18 @@ async function cloudCall(action,payload={}){
 async function loadCloudState(force=false){
   if(cloudLoaded&&!force)return cloudState;
   requireCloud();
-  const [profiles,works]=await Promise.all([
-    cloudJson(`${SUPABASE_URL}/rest/v1/profiles?select=*&order=display_name.asc`),
-    cloudJson(`${SUPABASE_URL}/rest/v1/works?select=*&order=updated_at.desc`)
-  ]);
+  const profiles=await cloudJson(`${SUPABASE_URL}/rest/v1/profiles?select=*&order=display_name.asc`);
   const map={};
   profiles.forEach(p=>map[p.username]={
     id:p.id,discord_id:p.discord_id,username:p.username,display_name:p.display_name,avatar:p.avatar||FALLBACK_LOGO,
-    banner:p.banner||p.discord_banner||'',discordBanner:p.discord_banner||'',bio:p.bio||'',links:p.links||[],verified:!!p.verified,role:p.role||'designer',designs:[]
+    banner:p.banner||p.discord_banner||'',discordBanner:p.discord_banner||'',bio:p.bio||'',links:p.links||[],verified:!!p.verified,role:p.role||'designer'
   });
-  works.forEach(w=>{
-    const owner=profiles.find(p=>p.id===w.profile_id); if(!owner)return;
-    const item={id:w.id,title:w.title,mediaType:w.media_type,mediaLabel:w.media_label,src:w.media_url,storagePath:w.storage_path,views:Number(w.views||0),likes:Number(w.likes||0),createdAt:new Date(w.created_at).getTime(),updatedAt:new Date(w.updated_at).getTime()};
-    if(map[owner.username])map[owner.username].designs.push(item);
-  });
-  cloudState={profiles:map,works:works.map(w=>{const p=profiles.find(x=>x.id===w.profile_id);const owner=p?map[p.username]:null;return {...w,owner,src:w.media_url,mediaType:w.media_type,mediaLabel:w.media_label,views:Number(w.views||0),likes:Number(w.likes||0),createdAt:new Date(w.created_at).getTime(),updatedAt:new Date(w.updated_at).getTime(),storagePath:w.storage_path};})};
+  cloudState={profiles:map};
   cloudLoaded=true;return cloudState;
 }
 function readProfiles(){return cloudState.profiles||{}}
 function writeProfiles(){/* Cloud is authoritative. */}
-function getMetrics(id){const w=cloudState.works.find(x=>x.id===id);return {views:Number(w?.views||0),likes:Number(w?.likes||0),liked:false};}
-function mediaMarkup(x, cls='work-media'){
-  const type=x.mediaType || x.media_type || 'image';
-  const src=x.src || x.image || x.media_url || '';
-  if(type==='video') return `<video class="${cls}" src="${esc(src)}" muted playsinline preload="metadata"></video>`;
-  return `<img class="${cls}" src="${esc(src||BANNER)}" alt="${esc(x.title||'Work')}">`;
-}
-async function hydrateWorkMedia(){ return; }
 async function refreshAfterMutation(){cloudLoaded=false;await loadCloudState(true);}
-async function openWork(id){
-  const found=findWork(id);if(!found)return;const {work,owner}=found;let metrics=getMetrics(id);
-  try{const v=await cloudCall('view-work',{workId:id});metrics.views=Number(v.views||metrics.views);work.views=metrics.views}catch(e){console.warn(e)}
-  const modal=document.createElement('div');modal.className='modal-backdrop';modal.id='workModal';modal.innerHTML=`<div class="work-modal" role="dialog" aria-modal="true"><button class="modal-close" id="closeWork">×</button><div class="modal-media">${mediaMarkup(work,'modal-media-el')}</div><div class="modal-content"><div class="modal-owner"><img src="${esc(safeImage(owner.avatar))}" alt=""><div><strong>${esc(owner.display_name||owner.username)}</strong><span>@${esc(owner.username)}</span></div><a href="/profile/${encodeURIComponent(owner.username)}">View profile ↗</a></div><div class="modal-title-row"><div><div class="section-label">PROJECT</div><h2>${esc(work.title||'Untitled project')}</h2></div><button class="like-btn" id="likeWork">♡ <span>${formatNumber(metrics.likes)}</span></button></div><div class="modal-stats"><span>◉ ${formatNumber(metrics.views)} views</span><span>♡ ${formatNumber(metrics.likes)} likes</span><span>${esc(work.mediaLabel||'Image')}</span></div><p class="modal-description">A selected visual project from the Arab Designers community. Open the designer profile to explore more work and connect directly.</p></div></div>`;
-  document.body.appendChild(modal);document.body.classList.add('modal-open');const close=()=>{modal.remove();document.body.classList.remove('modal-open')};document.getElementById('closeWork').onclick=close;modal.addEventListener('click',e=>{if(e.target===modal)close()});
-  document.addEventListener('keydown',function escClose(e){if(e.key==='Escape'){close();document.removeEventListener('keydown',escClose)}});
-  document.getElementById('likeWork').onclick=async()=>{if(!me){notify('Sign in with Discord to like projects.');return}const btn=document.getElementById('likeWork');btn.disabled=true;const liked=!btn.classList.contains('liked');try{const result=await cloudCall('like-work',{workId:id,liked});metrics.likes=Number(result.likes||0);work.likes=metrics.likes;btn.classList.toggle('liked',liked);btn.querySelector('span').textContent=formatNumber(metrics.likes)}catch(e){notify(e.message||'Could not update the like.')}finally{btn.disabled=false}};
-}
-function findWork(id){const w=cloudState.works.find(x=>x.id===id);return w?{work:w,owner:w.owner}:null;}
-function bindWorkTiles(){}
 async function adminPage(){
   if(!me || !isAdmin()){
     shell(`<section class="auth-card page-access-card"><div class="section-label">ADMIN ACCESS</div><h1>Admin access<br><span>required.</span></h1><p>This area is only available to the Arab Designers admin account.</p><a class="btn primary xl" href="${me?'/home.html':'/login.html'}">${me?'Back to home':'Sign in with Discord'} ↗</a></section>`);
@@ -267,7 +242,7 @@ async function adminPage(){
 async function settings(){
   if(!me){location.href='/login';return}
   try{await loadCloudState();}catch(e){console.warn('Cloud unavailable:',e)}
-  const profiles=readProfiles();const d=profiles[me.username]||{username:me.username,display_name:me.display_name||me.username,avatar:me.avatar,banner:me.banner,discordBanner:me.banner,bio:'',designs:[],links:[],verified:me.verified,role:me.role};
+  const profiles=readProfiles();const d=profiles[me.username]||{username:me.username,display_name:me.display_name||me.username,avatar:me.avatar,banner:me.banner,discordBanner:me.banner,bio:'',links:[],verified:me.verified,role:me.role};
   const adminPanel=isAdmin()?`<section class="settings-card admin-card"><div class="settings-card-head"><div><b>Admin control</b><span>Verification and Staff management.</span></div><span class="settings-live">ADMIN</span></div><p class="form-note">Manage designer verification and Staff badges from the dedicated admin dashboard.</p><a class="btn primary" href="/admin">Open admin dashboard ↗</a></section>`:'';
   shell(`<section class="settings-head"><div><div class="section-label">CREATOR CONTROL</div><h1>Make your profile<br><span>feel like you.</span></h1><p>Your profile identity is stored in the cloud.</p></div><div class="settings-head-actions"><a class="btn" href="/profile/${encodeURIComponent(me.username)}">View profile ↗</a><button class="btn danger" id="logoutBtn" type="button">Log out</button></div></section><section class="settings-layout"><form id="profileForm" class="settings-card"><div class="settings-card-head"><div><b>Profile identity</b><span>Shown across your public profile.</span></div><span class="settings-live">CLOUD LIVE</span></div><div class="settings-preview"><img src="${esc(safeImage(d.avatar))}" alt=""><div><strong>${esc(d.display_name||d.username)}</strong><span>@${esc(d.username)} ${d.verified?'✓':''}</span></div></div><label class="label">Display name</label><input class="input" name="display_name" value="${esc(d.display_name||d.username)}"><label class="label">Bio</label><textarea class="textarea" name="bio">${esc(d.bio||'')}</textarea><label class="label">Profile banner URL</label><input class="input" name="banner" value="${esc(d.banner||d.discordBanner||'')}" placeholder="Leave blank to use Discord banner"><button class="btn primary" type="submit">Save profile ↗</button></form></section>${adminPanel}`);
   document.getElementById('logoutBtn')?.addEventListener('click',logout);
