@@ -1,3 +1,0 @@
-import { db } from '../../lib/db.js';
-import { json } from '../../lib/http.js';
-export default async function handler(req,res){const username=decodeURIComponent((req.query?.username||'').toString()); const {rows}=await db().query(`SELECT u.*, COALESCE((SELECT json_agg(s ORDER BY s.platform) FROM social_links s WHERE s.user_id=u.id),'[]') social_links, COALESCE((SELECT json_agg(d ORDER BY d.created_at DESC) FROM designs d WHERE d.user_id=u.id),'[]') designs FROM users u WHERE lower(u.username)=lower($1) LIMIT 1`,[username]); if(!rows[0])return json(res,404,{error:'Profile not found'}); json(res,200,{profile:rows[0]});}
