@@ -1,0 +1,10 @@
+name = "arab-designers-preview"
+main = "worker.js"
+compatibility_date = "2026-09-04"
+workers_dev = true
+
+[vars]
+SUPABASE_URL = "https://docotwhlvkpthztvlmbg.supabase.co"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_xtfZ1FsV_7mKDtLWg7QR_g_qALvJwEq"
+# IMPORTANT: set ORIGIN_URL to the real GitHub Pages origin before deploying.
+ORIGIN_URL = "https://YOUR-GITHUB-PAGES-ORIGIN.example"

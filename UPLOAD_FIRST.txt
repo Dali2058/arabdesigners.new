@@ -1,8 +1,1 @@
-ARAB DESIGNERS — QUICK DEPLOY
-
-1) Upload the complete `arab-designers-flat` folder to your GitHub Pages repository.
-2) The Supabase URL + publishable key are already configured in `cloud-config.js`.
-3) IMPORTANT: GitHub Pages cannot deploy Supabase Edge Functions. Before uploads/likes/profile editing work, run `supabase/schema.sql` and `supabase/migration_views.sql` in Supabase SQL Editor, then deploy `supabase/functions/arab-designers-api/index.ts` as the Edge Function named `arab-designers-api`.
-4) After the function is deployed, the site uses the cloud database/storage for profiles, works, likes and views.
-
-Do NOT put a Supabase secret/service-role key in the website.
+Arab Designers no longer includes public Add Work / Upload. Projects are read-only in the public portfolio.

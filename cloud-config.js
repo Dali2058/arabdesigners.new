@@ -1,1 +1,1 @@
-window.ARAB_DESIGNERS_CONFIG={SUPABASE_URL:'https://docotwhlvkpthztvlmbg.supabase.co',SUPABASE_ANON_KEY:'sb_publishable_xtfZ1FsV_7mKDtLWg7QR_g_qALvJwEq',SUPABASE_FUNCTION_URL:'https://docotwhlvkpthztvlmbg.supabase.co/functions/v1/arab-designers-api',WORK_BUCKET:'works'};
+window.ARAB_DESIGNERS_CONFIG={SUPABASE_URL:'https://docotwhlvkpthztvlmbg.supabase.co',SUPABASE_ANON_KEY:'sb_publishable_xtfZ1FsV_7mKDtLWg7QR_g_qALvJwEq',SUPABASE_FUNCTION_URL:'https://docotwhlvkpthztvlmbg.supabase.co/functions/v1/arab-designers-api'};
