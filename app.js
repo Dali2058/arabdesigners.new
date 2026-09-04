@@ -31,7 +31,8 @@ function notify(message){
   toast.textContent = message;
   toast.classList.add('show');
   clearTimeout(window.__toastTimer);
-  window.__toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+  const duration = Math.min(9000, Math.max(2800, String(message||'').length * 55));
+  window.__toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
 }
 function saveMe(user){ me = user; localStorage.setItem(ME_KEY, JSON.stringify(user)); }
 function saveToken(token){ if(token) localStorage.setItem(TOKEN_KEY, token); }
@@ -114,6 +115,62 @@ function about(){
   shell(`<section class="about-hero about-hero-v2"><div><div class="section-label">ABOUT · EYAD MOHAMED</div><h1>Design with<br><span>direction.</span></h1><p>Graphic designer, UI/UX specialist and creative director building visual identities, digital experiences and systems that feel deliberate.</p><div class="about-actions"><a class="btn primary" href="/contact">Work together ↗</a><a class="text-link" href="/designers">Meet the designers →</a></div><div class="about-signature"><span>2018—2026</span><span>Visual identity</span><span>UI/UX</span><span>Creative direction</span></div></div><div class="about-portrait about-portrait-v2"><img src="${EYAD}" alt="Eyad Mohamed"><div class="portrait-overlay"></div><div class="portrait-tag">EYAD MOHAMED<br><small>ARAB DESIGNERS · FOUNDER</small></div></div></section>
   <section class="section story-grid about-story-v2"><div class="section-label">THE APPROACH</div><div><h2>Clear thinking.<br><span>Strong visuals.</span></h2><p>بدأت رحلتي في التصميم عام 2018، ومن وقتها وأنا أشتغل بين الهوية البصرية، المحتوى الرقمي، الواجهات والتجارب المختلفة. اشتغلت مع استوديوهات وفرق إبداعية متعددة، وركزت في كل تجربة على تحويل الفكرة إلى نظام بصري واضح وقابل للاستخدام.</p><p>Today the focus is simple: composition, typography, contrast, motion and digital interaction — all working together instead of competing for attention.</p><div class="about-facts"><div><strong>01</strong><span>Visual identity systems</span></div><div><strong>02</strong><span>Digital & UI/UX experiences</span></div><div><strong>03</strong><span>Creative direction</span></div></div></div></section>
   <section class="section timeline-modern"><div class="section-label">2018 — 2026</div><div class="timeline-list"><article><b>2018</b><div><h3>The beginning</h3><p>تكوين، ألوان، خطوط وهوية بصرية وبناء أساس قوي في التصميم.</p></div></article><article><b>2019—21</b><div><h3>Studio experience</h3><p>عمل مع استوديوهات وفرق إبداعية متعددة على هويات وحملات ومحتوى.</p></div></article><article><b>2022—24</b><div><h3>Identity + digital</h3><p>الأنظمة البصرية، الواجهات، السوشيال وart direction مع اهتمام أكبر بالتفاصيل.</p></div></article><article><b>2025—26</b><div><h3>Design with direction</h3><p>مشاريع وتجارب تجمع الهوية والاستخدام والحركة والوضوح في تجربة واحدة.</p></div></article></div></section>`);
+}
+
+function contact(){
+  const params=new URLSearchParams(location.search);
+  const designer=(params.get('designer')||'').trim();
+  shell(`<section class="contact-layout">
+    <div class="contact-copy">
+      <div class="section-label">GET IN TOUCH</div>
+      <h1>Start a<br><span>project.</span></h1>
+      <p>${designer?`Send a message about working with <b>@${esc(designer)}</b> — `:'Tell us about your project — '}it goes straight to the Arab Designers Discord.</p>
+      <div class="contact-points">
+        <div><b>Response time</b><span>Usually within 24–48 hours.</span></div>
+        <div><b>Delivery</b><span>Sent directly to our Discord, no account needed.</span></div>
+        <div><b>Privacy</b><span>Only visible to the Arab Designers team.</span></div>
+      </div>
+    </div>
+    <form id="contactForm" class="contact-form">
+      <div class="form-form-head"><span>NEW MESSAGE</span><small>We reply on Discord</small></div>
+      <div class="form-grid">
+        <div><label class="label">Your name</label><input class="input" name="name" required></div>
+        <div><label class="label">Discord or email</label><input class="input" name="contact_info" required></div>
+      </div>
+      <label class="label">Subject</label>
+      <input class="input" name="subject" value="${designer?`Project with @${esc(designer)}`:''}" required>
+      <label class="label">Message</label>
+      <textarea class="textarea" name="message" required placeholder="Tell us about your project…"></textarea>
+      <button class="btn primary" type="submit">Send message ↗</button>
+      <p class="form-note">Sent directly to the Arab Designers Discord — no account needed.</p>
+    </form>
+  </section>`);
+  document.getElementById('contactForm').onsubmit=async e=>{
+    e.preventDefault();
+    const btn=e.target.querySelector('button[type="submit"]');
+    const data=Object.fromEntries(new FormData(e.target));
+    const originalLabel=btn.textContent;
+    btn.disabled=true;btn.textContent='Sending…';
+    try{
+      const fields=[
+        {name:'From',value:data.name||'Unknown',inline:true},
+        {name:'Contact',value:data.contact_info||'—',inline:true}
+      ];
+      if(designer)fields.push({name:'About designer',value:'@'+designer,inline:true});
+      fields.push({name:'Message',value:String(data.message||'').slice(0,1000)});
+      const r=await fetch(DISCORD_WEBHOOK_URL,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({embeds:[{title:data.subject||'New contact form message',color:0x5b8cff,fields,timestamp:new Date().toISOString()}]})
+      });
+      if(!r.ok)throw new Error('Could not deliver the message to Discord (status '+r.status+').');
+      notify('Message sent — we will get back to you on Discord.');
+      e.target.reset();
+    }catch(err){
+      notify(err.message||'Could not send the message. Try again.');
+    }finally{
+      btn.disabled=false;btn.textContent=originalLabel;
+    }
+  };
 }
 
 function login(){
@@ -209,7 +266,11 @@ async function cloudCall(action,payload={}){
   if(token)headers.Authorization=`Bearer ${token}`;
   const r=await fetch(SUPABASE_FUNCTION_URL,{method:'POST',headers,body:JSON.stringify({action,...payload})});
   const data=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(data.error||`Cloud action failed (${r.status})`);
+  if(!r.ok){
+    let msg=data.error||data.message||`Cloud action failed (${r.status})`;
+    if(r.status===401) msg=`${msg} — the Edge Function is rejecting the request before it runs. In Supabase → Edge Functions → arab-designers-api → Settings, turn OFF "Enforce JWT Verification" (this function checks the Discord token itself), or redeploy with: supabase functions deploy arab-designers-api --no-verify-jwt`;
+    throw new Error(msg);
+  }
   return data;
 }
 async function loadCloudState(force=false){

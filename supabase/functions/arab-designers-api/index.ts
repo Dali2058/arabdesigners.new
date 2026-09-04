@@ -87,10 +87,17 @@ async function handle(req: Request) {
     if (user.username !== 'i.ixi.') return json({ error: 'Admin only' }, 403)
     const target = String(body.username || '')
     if (!target) return json({ error: 'Username required' }, 400)
-    const patch = action === 'set-verification' ? { verified: !!body.enabled } : { role: body.enabled ? 'staff' : 'designer' }
+    // Badges are mutually exclusive: a profile shows either Verified or Staff, never both.
+    let patch;
+    if (action === 'set-verification') {
+      patch = body.enabled ? { verified: true } : { verified: false };
+      if (body.enabled && target !== 'i.ixi.') patch.role = 'designer'; // clear any Staff badge
+    } else {
+      patch = body.enabled ? { role: 'staff', verified: false } : { role: 'designer' };
+    }
     const { data, error } = await admin.from('profiles').update(patch).eq('username', target).select('*').single()
     if (error) throw error
-    return json({ profile: data, message: action === 'set-verification' ? (data.verified ? 'Designer verified.' : 'Verification removed.') : (data.role === 'staff' ? 'Staff badge enabled.' : 'Staff badge removed.') })
+    return json({ profile: data, message: action === 'set-verification' ? (data.verified ? 'Designer verified.' : 'Verification removed.') : (data.role === 'staff' ? 'Staff badge enabled (other badges cleared).' : 'Staff badge removed.') })
   }
 
   if (action === 'like-work') {
