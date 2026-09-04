@@ -1,9 +1,0 @@
-{
-  "name": "arab-designers",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {"dev":"vercel dev","build":"echo static-build","start":"vercel dev"},
-  "dependencies": {"pg":"^8.16.3"},
-  "devDependencies": {"vercel":"^48.0.0"}
-}
