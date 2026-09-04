@@ -65,17 +65,18 @@ function safeImage(url, fallback=FALLBACK_LOGO){ return url || fallback; }
 
 function nav(){
   const profile = me ? `/profile/${encodeURIComponent(me.username)}` : '/login';
+  const mobileAuth = me ? `<a class="mobile-only" href="${profile}">My profile ↗</a><a class="mobile-only" href="/settings">Settings</a>` : `<a class="mobile-only" href="/login.html">Sign in with Discord ↗</a>`;
   return `<header class="topbar">
     <a class="brand" href="/home.html" aria-label="Arab Designers home">
       <span class="brand-mark"><img src="${LOGO}" onerror="this.src='${FALLBACK_LOGO}'" alt=""></span>
       <span><strong>Arab Designers</strong><small>Creative network</small></span>
     </a>
     <nav class="navlinks">
-      <a href="/home">Home</a><a href="/discover">Discover</a><a href="/designers">Designers</a><a href="/about">About</a><a href="/contact">Contact</a>
+      <a href="/home">Home</a><a href="/discover">Discover</a><a href="/designers">Designers</a><a href="/about">About</a><a href="/contact">Contact</a>${mobileAuth}
     </nav>
     <div class="nav-right">
       <label class="search-wrap"><span>⌕</span><input id="globalSearch" placeholder="Search work or designers"></label>
-      ${me ? `<a class="profile-chip" href="${profile}"><img src="${esc(me.avatar||FALLBACK_LOGO)}" alt=""><span>${esc(me.display_name||me.username)}</span></a>` : `<a class="btn primary nav-login" href="/login.html">Sign in with Discord</a>`}
+      ${me ? `<a class="profile-chip" href="${profile}"><img src="${esc(me.avatar||FALLBACK_LOGO)}" alt=""><span>${esc(me.display_name||me.username)}</span></a>` : `<a class="btn primary nav-login" href="/login.html"><span class="login-full">Sign in with Discord</span><span class="login-short">Login</span></a>`}
       <button class="icon-btn menu-trigger" id="menuBtn" aria-label="Menu">☰</button>
     </div>
   </header>`;
@@ -84,6 +85,7 @@ function footer(){
   return `<footer class="footer"><div class="footer-main"><div><div class="footer-brand"><span class="brand-mark"><img src="${LOGO}" onerror="this.src='${FALLBACK_LOGO}'" alt=""></span><strong>Arab Designers</strong></div><p>A premium space for Arabic creatives, portfolios and visual work.</p></div><div><b>Explore</b><a href="/discover">Discover</a><a href="/designers">Designers</a><a href="/about">About</a></div><div><b>Studio</b><a href="/contact">Start a project</a><a href="/settings">Creator settings</a><a href="/login.html">Join community</a></div></div><div class="footer-bottom"><span>© 2026 Arab Designers</span><span>Built for people who care about the details.</span></div></footer>`;
 }
 function shell(content){
+  document.body.classList.remove('home-active');
   app.innerHTML = nav() + `<main class="page">${content}</main>` + footer();
   const search = document.getElementById('globalSearch');
   search?.addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.value.trim()) location.href = '/discover.html?q=' + encodeURIComponent(e.target.value.trim()); });
@@ -91,6 +93,7 @@ function shell(content){
 }
 
 async function home(){
+  document.body.classList.add('home-active');
   try{await loadCloudState();}catch(e){console.warn('Cloud unavailable:',e);}
   const profiles = Object.values(readProfiles());
   const works = profiles.flatMap(p => (p.designs||[]).map(w => ({...w, owner:p}))).slice(0,6);
@@ -113,6 +116,7 @@ async function home(){
     <div class="featured-grid">${works.length ? works.slice(0,3).map((w,i)=>workTile(w,i)).join('') : seedTiles()}</div>
   </section>
   <section class="section home-cta"><div><div class="section-label">FOR DESIGNERS</div><h2>Your work deserves<br>more than a thumbnail.</h2><p>Build a profile and let people explore your creative direction and selected work.</p></div><a class="btn primary xl" href="/login.html">Create your profile ↗</a></section>`);
+  document.body.classList.add('home-active');
 }
 function seedTiles(){
   return [0,1,2].map((i)=>`<article class="feature-tile seed-tile" data-seed="${i}" onclick="location.href='/discover.html'"><div class="seed-image" style="background-image:url('${FEATURED_IMAGES[i]}');--pos:50%"></div><div class="tile-overlay"></div><div class="tile-top"><span>0${i+1}</span><span>FEATURED</span></div><div class="tile-bottom"><strong>${['Visual Direction','Brand System','Digital Experience'][i]}</strong><span>Explore the collection ↗</span></div></article>`).join('');
