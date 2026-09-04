@@ -80,7 +80,7 @@ function shell(content){
 }
 
 async function home(){
-  await loadCloudState();
+  try{await loadCloudState();}catch(e){console.warn('Cloud unavailable:',e);}
   const profiles = Object.values(readProfiles());
   const works = profiles.flatMap(p => (p.designs||[]).map(w => ({...w, owner:p}))).slice(0,6);
   shell(`<section class="hero-stage">
@@ -96,6 +96,7 @@ async function home(){
     <div class="hero-floating hero-card-b"><span>CREATIVE FEED</span><strong>${works.length ? formatNumber(works.length) : '∞'}<small> works</small></strong><div class="mini-stack"><span></span><span></span><span></span></div></div>
     <div class="scroll-cue"><span>Scroll to explore</span><i>↓</i></div>
   </section>
+  <section class="cloud-status" id="cloudStatus"><span class="status-dot"></span><span>Cloud data will appear here when Supabase is connected.</span></section>
   <section class="section intro-section"><div class="section-label">THE PLATFORM</div><div class="intro-grid"><h2>A sharper home for<br><span>Arab creative talent.</span></h2><div><p>Not another generic portfolio grid. Arab Designers is designed around people, process and the work itself — with profiles that feel personal and projects that deserve attention.</p><a class="text-link" href="/about.html">Learn about the vision →</a></div></div></section>
   <section class="section showcase"><div class="section-head"><div><div class="section-label">SELECTED WORK</div><h2>Fresh from the feed.</h2></div><a class="text-link" href="/discover.html">View all work →</a></div>
     <div class="featured-grid">${works.length ? works.slice(0,3).map((w,i)=>workTile(w,i)).join('') : seedTiles()}</div>
@@ -121,7 +122,7 @@ function login(){
 }
 
 async function designers(){
-  await loadCloudState();
+  try{await loadCloudState();}catch(e){console.warn('Cloud unavailable:',e);}
   const all = Object.values(readProfiles());
   shell(`<section class="directory-head"><div><div class="section-label">COMMUNITY DIRECTORY</div><h1>Designers worth<br><span>discovering.</span></h1><p>Profiles, disciplines and visual work — all in one place.</p></div><div class="directory-stat"><strong>${all.length || '—'}</strong><span>local profiles</span></div></section><section class="section"><div class="designer-grid">${all.map((u,i)=>designerCard(u,i)).join('') || `<div class="empty-state wide"><span>✦</span><h3>The directory is just getting started.</h3><p>Sign in with Discord to create the first designer profile.</p><a class="btn primary" href="/login.html">Join the community ↗</a></div>`}</div></section>`);
 }
@@ -132,7 +133,7 @@ function designerCard(u,i){
 }
 
 async function profile(username){
-  await loadCloudState();
+  try{await loadCloudState();}catch(e){console.warn('Cloud unavailable:',e);}
   const target=username || me?.username || 'designer';
   const same=!!(me && me.username===target);
   const profiles=readProfiles();
@@ -180,8 +181,15 @@ function requireCloud(){
 }
 async function cloudJson(url, options={}){
   requireCloud();
-  const headers={'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json',...(options.headers||{})};
-  const r=await fetch(url,{...options,headers});
+  const headers={'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json','Accept':'application/json',...(options.headers||{})};
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),8000);
+  let r;
+  try{ r=await fetch(url,{...options,headers,signal:controller.signal}); }catch(e){
+    if(e?.name==='AbortError') throw new Error('Supabase connection timed out. Check the project URL and publishable key.');
+    throw new Error('Could not connect to Supabase. Check the project URL, key, and network.');
+  }finally{ clearTimeout(timer); }
+  
   if(!r.ok){let msg='Request failed';try{const e=await r.json();msg=e.message||e.error||msg}catch{}throw new Error(msg)}
   return r.status===204?null:r.json();
 }
@@ -252,7 +260,7 @@ async function openWorkEditor(username, designId=null){
 async function deleteDesign(username,id){if(!confirm('Remove this project from the cloud?'))return;try{await cloudCall('delete-work',{workId:id});await refreshAfterMutation();notify('Project removed from the cloud');await profile(username)}catch(e){notify(e.message||'Could not remove project.')}}
 
 async function discover(){
-  await loadCloudState();
+  try{await loadCloudState();}catch(e){console.warn('Cloud unavailable:',e);}
   const q=new URLSearchParams(location.search).get('q')?.toLowerCase().trim()||'';
   const profiles=readProfiles();let works=Object.values(profiles).flatMap(owner=>(owner.designs||[]).map(work=>({...work,owner})));
   if(q)works=works.filter(x=>`${x.title} ${x.owner.display_name} ${x.owner.username} ${x.mediaLabel}`.toLowerCase().includes(q));
@@ -273,7 +281,9 @@ function contact(){
 }
 
 async function settings(){
-  if(!me){location.href='/login.html';return}await loadCloudState();const profiles=readProfiles();const d=profiles[me.username]||{username:me.username,display_name:me.display_name||me.username,avatar:me.avatar,banner:me.banner,discordBanner:me.banner,bio:'',designs:[],links:[]};
+  if(!me){location.href='/login.html';return}
+  try{await loadCloudState();}catch(e){console.warn('Cloud unavailable:',e)}
+  const profiles=readProfiles();const d=profiles[me.username]||{username:me.username,display_name:me.display_name||me.username,avatar:me.avatar,banner:me.banner,discordBanner:me.banner,bio:'',designs:[],links:[]};
   shell(`<section class="settings-head"><div><div class="section-label">CREATOR CONTROL</div><h1>Make your profile<br><span>feel like you.</span></h1><p>Profile data and projects are stored in the cloud.</p></div><a class="btn" href="/profile/${encodeURIComponent(me.username)}">View profile ↗</a></section><section class="settings-layout"><form id="profileForm" class="settings-card"><div class="settings-card-head"><div><b>Profile identity</b><span>Shown across your public profile.</span></div><span class="settings-live">CLOUD LIVE</span></div><div class="settings-preview"><img src="${esc(safeImage(d.avatar))}" alt=""><div><strong>${esc(d.display_name||d.username)}</strong><span>@${esc(d.username)}</span></div></div><label class="label">Display name</label><input class="input" name="display_name" value="${esc(d.display_name||d.username)}"><label class="label">Bio</label><textarea class="textarea" name="bio">${esc(d.bio||'')}</textarea><label class="label">Profile banner URL</label><input class="input" name="banner" value="${esc(d.banner||d.discordBanner||'')}" placeholder="Leave blank to use Discord banner"><button class="btn primary" type="submit">Save profile ↗</button></form><section class="settings-card"><div class="settings-card-head"><div><b>Portfolio manager</b><span>${d.designs?.length||0} published projects</span></div><button class="btn" id="settingsAddWork" type="button">+ Add work</button></div><div class="settings-work-list">${(d.designs||[]).map(w=>`<div class="settings-work"><div class="settings-thumb">${mediaMarkup(w,'settings-media')}</div><div><strong>${esc(w.title)}</strong><span>${esc(w.mediaLabel||'Image')}</span></div><div class="settings-work-actions"><button class="icon-btn" data-settings-edit="${esc(w.id)}">Edit</button><button class="icon-btn danger" data-settings-delete="${esc(w.id)}">Remove</button></div></div>`).join('')||'<div class="empty-state compact"><span>✦</span><p>No projects yet.</p></div>'}</div></section></section>`);
   document.getElementById('profileForm').onsubmit=async e=>{e.preventDefault();const payload=Object.fromEntries(new FormData(e.target));try{await cloudCall('profile-update',{displayName:payload.display_name,bio:payload.bio,banner:payload.banner});saveMe({...me,display_name:payload.display_name,banner:payload.banner||me.banner});await refreshAfterMutation();notify('Profile updated in the cloud')}catch(err){notify(err.message||'Could not update profile.')}};
   document.getElementById('settingsAddWork').onclick=()=>openWorkEditor(me.username);document.querySelectorAll('[data-settings-edit]').forEach(b=>b.onclick=()=>openWorkEditor(me.username,b.dataset.settingsEdit));document.querySelectorAll('[data-settings-delete]').forEach(b=>b.onclick=()=>deleteDesign(me.username,b.dataset.settingsDelete));
