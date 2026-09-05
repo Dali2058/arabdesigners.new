@@ -56,6 +56,34 @@ async function profileFor(u: any) {
   return data
 }
 
+
+async function chatTarget(username: string) {
+  const { data, error } = await admin.from('profiles')
+    .select('id,discord_id,username,display_name,avatar')
+    .eq('username', username).limit(1).single()
+  if (error || !data) throw new Error('Designer not found')
+  return data
+}
+async function chatSummary(userId: string) {
+  const { data, error } = await admin.from('messages')
+    .select('sender_id,receiver_id,content,attachment_name,created_at,read_at')
+    .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+    .order('created_at',{ascending:false}).limit(500)
+  if(error) throw error
+  const map:any = {}
+  for(const m of (data||[])){
+    const other=m.sender_id===userId?m.receiver_id:m.sender_id
+    if(!map[other]) map[other]={last:m,unread:0}
+    if(m.receiver_id===userId && !m.read_at) map[other].unread++
+  }
+  const ids=Object.keys(map)
+  if(!ids.length) return []
+  const {data:profiles,error:pe}=await admin.from('profiles').select('discord_id,username,display_name,avatar').in('discord_id',ids)
+  if(pe) throw pe
+  return (profiles||[]).map((p:any)=>({username:p.username,display_name:p.display_name,avatar:p.avatar,last:map[p.discord_id].last,unread:map[p.discord_id].unread}))
+    .sort((a:any,b:any)=>new Date(b.last.created_at).getTime()-new Date(a.last.created_at).getTime())
+}
+
 async function handle(req: Request) {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
@@ -77,6 +105,54 @@ async function handle(req: Request) {
   let user: any
   try { user = await requireDiscord(req) } catch (e) { return json({ error: String(e.message || e) }, 401) }
   let profile = await profileFor(user)
+
+
+  if (action === 'chat-unread') {
+    const { count, error } = await admin.from('messages').select('id',{count:'exact',head:true}).eq('receiver_id', user.id).is('read_at',null)
+    if(error) throw error
+    return json({ unread: count || 0 })
+  }
+
+  if (action === 'chat-list') {
+    return json({ conversations: await chatSummary(user.id) })
+  }
+
+  if (action === 'chat-history') {
+    const target = await chatTarget(String(body.username||''))
+    const { data, error } = await admin.from('messages').select('*')
+      .or(`and(sender_id.eq.${user.id},receiver_id.eq.${target.discord_id}),and(sender_id.eq.${target.discord_id},receiver_id.eq.${user.id})`)
+      .order('created_at',{ascending:true}).limit(500)
+    if(error) throw error
+    await admin.from('messages').update({read_at:new Date().toISOString()})
+      .eq('receiver_id',user.id).eq('sender_id',target.discord_id).is('read_at',null)
+    return json({ profile: target, messages: data||[] })
+  }
+
+  if (action === 'chat-send') {
+    const target = await chatTarget(String(body.username||''))
+    if(target.discord_id===user.id) return json({error:'You cannot message yourself'},400)
+    const content=String(body.content||'').slice(0,3000)
+    const attachmentUrl=String(body.attachmentUrl||'').slice(0,2000)
+    if(!content && !attachmentUrl) return json({error:'Message is empty'},400)
+    const {data,error}=await admin.from('messages').insert({
+      sender_id:user.id,receiver_id:target.discord_id,content,
+      attachment_url:attachmentUrl||null,
+      attachment_type:body.attachmentType?String(body.attachmentType).slice(0,100):null,
+      attachment_name:body.attachmentName?String(body.attachmentName).slice(0,255):null
+    }).select('*').single()
+    if(error) throw error
+    return json({message:data})
+  }
+
+  if (action === 'chat-upload-url') {
+    const target = await chatTarget(String(body.username||''))
+    if(target.discord_id===user.id) return json({error:'Invalid recipient'},400)
+    const ext=String(body.ext||'bin').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,8)||'bin'
+    const path=`${user.id}/${crypto.randomUUID()}.${ext}`
+    const {data,error}=await admin.storage.from('chat').createSignedUploadUrl(path)
+    if(error) throw error
+    return json({path,token:data.token})
+  }
 
   if (action === 'sync-profile') {
     if (Array.isArray(body.connections)) {

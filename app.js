@@ -159,21 +159,29 @@ function nav(){
       <span><strong>Arab Designers</strong><small>Creative network</small></span>
     </a>
     <nav class="navlinks">
-      <a href="/home">Home</a><a href="/designers">Designers</a><a href="/about">About</a><a href="/contact">Contact</a>${isAdmin()?'<a class="admin-nav-link" href="/admin">Admin</a>':''}${mobileAuth}
+      <a href="/home">Home</a><a href="/designers">Designers</a><a href="/works">Works</a>${me?'<a class="publish-nav" href="/profile/'+encodeURIComponent(me.username)+'#works">+ Publish</a>':''}<a href="/about">About</a><a href="/contact">Contact</a>${isAdmin()?'<a class="admin-nav-link" href="/admin">Admin</a>':''}${mobileAuth}
     </nav>
     <div class="nav-right">
       <label class="search-wrap"><span>⌕</span><input id="globalSearch" placeholder="Search work or designers"></label>
-      ${me ? `<a class="profile-chip" href="${profile}"><img src="${esc(me.avatar||FALLBACK_LOGO)}" alt=""><span>${esc(me.display_name||me.username)}</span></a>` : `<a class="btn primary nav-login" href="/login.html"><span class="login-full">Sign in with Discord</span><span class="login-short">Login</span></a>`}
+      ${me ? `<a class="messages-nav" href="/messages" title="Messages"><span class="messages-icon">◌</span><i id="messageUnreadDot"></i></a><a class="profile-chip" href="${profile}"><img src="${esc(me.avatar||FALLBACK_LOGO)}" alt=""><span>${esc(me.display_name||me.username)}</span></a>` : `<a class="btn primary nav-login" href="/login.html"><span class="login-full">Sign in with Discord</span><span class="login-short">Login</span></a>`}
       <button class="icon-btn menu-trigger" id="menuBtn" aria-label="Menu">☰</button>
     </div>
   </header>`;
 }
+
+async function refreshMessageBadge(){
+  if(!me)return;
+  try{const r=await cloudCall('chat-unread');const dot=document.getElementById('messageUnreadDot');if(dot){dot.textContent=r.unread>0?(r.unread>9?'9+':r.unread):'';dot.classList.toggle('show',r.unread>0)}}catch{}
+}
+
 function footer(){
   return `<footer class="footer"><div class="footer-main"><div><div class="footer-brand"><span class="brand-mark"><img src="${LOGO}" onerror="this.src='${FALLBACK_LOGO}'" alt=""></span><strong>Arab Designers</strong></div><p>A premium space for Arabic creatives, profiles and creative talent.</p></div><div><b>Explore</b><a href="/designers">Designers</a><a href="/about">About</a><a href="/contact">Contact</a></div><div><b>Studio</b><a href="/contact">Start a project</a><a href="/settings">Creator settings</a>${isAdmin()?'<a href="/admin">Admin panel</a>':''}<a href="/login.html">Join community</a></div></div><div class="footer-bottom"><span>© 2026 Arab Designers</span><span>Built for people who care about the details.</span></div></footer>`;
 }
 function shell(content){
   document.body.classList.remove('home-active');
   app.innerHTML = nav() + `<main class="page">${content}</main>` + footer();
+  refreshMessageBadge();
+  clearInterval(window.__messageBadgeTimer); window.__messageBadgeTimer=setInterval(refreshMessageBadge,5000);
   const search = document.getElementById('globalSearch');
   search?.addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.value.trim()) location.href = '/designers.html?q=' + encodeURIComponent(e.target.value.trim()); });
   document.getElementById('menuBtn')?.addEventListener('click', () => document.querySelector('.navlinks')?.classList.toggle('open'));
@@ -200,6 +208,61 @@ async function home(){
   <section class="section intro-section"><div class="section-label">THE PLATFORM</div><div class="intro-grid"><h2>A sharper home for<br><span>Arab creative talent.</span></h2><div><p>Arab Designers is built around the people behind the work — with public profiles, clear identities and a direct way to discover and contact designers.</p><a class="text-link" href="/designers">Browse the directory →</a></div></div></section>
   <section class="section home-cta"><div><div class="section-label">JOIN THE NETWORK</div><h2>Put your name<br><span>on the directory.</span></h2><p>Sign in with Discord and your designer profile will be created in the cloud and appear automatically on the Designers page.</p></div><a class="btn primary xl" href="/designers">Explore Designers Now ↗</a></section>`);
   document.body.classList.add('home-active');
+}
+
+
+function worksPage(){
+  const all=[];
+  Object.entries(cloudState.works||{}).forEach(([pid,list])=>{
+    const p=Object.values(cloudState.profiles||{}).find(x=>x.id===pid);
+    (list||[]).forEach(w=>all.push({...w,designer:p||{username:'designer',display_name:'Designer',avatar:FALLBACK_LOGO}}));
+  });
+  all.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+  shell(`<section class="works-page-head"><div><div class="section-label">THE WORKS</div><h1>Work worth<br><span>being seen.</span></h1><p>Explore the latest projects published by designers across Arab Designers.</p></div>${me?`<a class="btn primary xl" href="/profile/${encodeURIComponent(me.username)}#works">+ Publish work</a>`:''}</section>
+  <section class="section"><div class="works-grid works-feed" id="worksGrid">${all.length?all.map(w=>`<div class="work-feed-item"><div class="work-feed-author"><img src="${esc(safeImage(w.designer.avatar))}" alt=""><div><a href="/profile/${encodeURIComponent(w.designer.username)}">${esc(w.designer.display_name||w.designer.username)}</a><span>@${esc(w.designer.username)}</span></div></div>${workCard(w,false)}</div>`).join(''):`<div class="empty-state wide"><span>✦</span><h3>No published work yet</h3><p>Designers can publish their first project from their profile.</p></div>`}</div></section>`);
+  document.querySelectorAll('[data-open-work]').forEach(b=>b.onclick=()=>openWorkViewer(b.dataset.openWork));
+  document.querySelectorAll('[data-like-work]').forEach(b=>b.onclick=async(e)=>{
+    e.stopPropagation(); const w=findWork(b.dataset.likeWork); if(!w)return;
+    if(!me){notify('Sign in with Discord to like work.');return}
+    const liked=!cloudState.likedWorks?.has(w.id);
+    try{const r=await cloudCall('like-work',{workId:w.id,liked});w.likes=r.likes;if(liked)cloudState.likedWorks.add(w.id);else cloudState.likedWorks.delete(w.id);document.querySelectorAll(`[data-like-work="${w.id}"]`).forEach(el=>{el.innerHTML=`${liked?'♥':'♡'} <span>${formatNumber(w.likes)}</span>`;el.classList.toggle('liked',liked)})}catch(err){notify(err.message||'Could not update like.')}
+  });
+  document.getElementById('closeWorkViewer')?.addEventListener('click',()=>document.getElementById('workViewer')?.classList.remove('open'));
+  document.getElementById('workViewer')?.addEventListener('click',e=>{if(e.target.id==='workViewer')e.target.classList.remove('open')});
+  app.insertAdjacentHTML('beforeend',modalsMarkup(false));
+  if(all.length)refreshLikedWorks(all.map(w=>w.id));
+}
+async function messagesPage(){
+  if(!me){ location.href='/login.html'; return; }
+  shell(`<section class="messages-page"><div class="messages-head"><div><div class="section-label">MESSAGES</div><h1>Your conversations.</h1></div><span class="messages-live">LIVE</span></div><div class="messenger" id="messenger"><aside class="conversation-list" id="conversationList"><div class="conversation-empty">Loading conversations…</div></aside><section class="chat-pane" id="chatPane"><div class="chat-empty">Select a designer to start chatting.</div></section></div></section>`);
+  await initMessenger(new URLSearchParams(location.search).get('designer')||'');
+}
+async function initMessenger(initialDesigner=''){
+  let active='', timer=null, conversations=[];
+  const listEl=()=>document.getElementById('conversationList'), pane=()=>document.getElementById('chatPane');
+  async function loadConversations(){
+    try{const r=await cloudCall('chat-list'); conversations=r.conversations||[]; listEl().innerHTML=conversations.length?conversations.map(c=>`<button class="conversation ${active===c.username?'active':''}" data-chat-user="${esc(c.username)}"><img src="${esc(safeImage(c.avatar))}"><span><b>${esc(c.display_name||c.username)}</b><small>@${esc(c.username)}</small></span>${c.unread?`<i class="unread-dot">${c.unread>9?'9+':c.unread}</i>`:''}</button>`).join(''):'<div class="conversation-empty">No conversations yet.<br>Open a designer profile and press Contact.</div>'; listEl().querySelectorAll('[data-chat-user]').forEach(b=>b.onclick=()=>openChat(b.dataset.chatUser));}
+    catch(e){listEl().innerHTML=`<div class="conversation-empty">${esc(e.message||'Could not load conversations.')}</div>`}
+  }
+  async function openChat(username){
+    active=username; await loadConversations();
+    pane().innerHTML='<div class="chat-loading">Loading messages…</div>';
+    try{
+      const r=await cloudCall('chat-history',{username}); const p=r.profile||{username,display_name:username,avatar:FALLBACK_LOGO}; active=username;
+      pane().innerHTML=`<div class="chat-top"><img src="${esc(safeImage(p.avatar))}"><div><b>${esc(p.display_name||p.username)}</b><span>@${esc(p.username)}</span></div><a class="btn" href="/profile/${encodeURIComponent(p.username)}">Profile ↗</a></div><div class="chat-messages" id="chatMessages"></div><form class="chat-compose" id="chatCompose"><input type="file" id="chatFile" hidden accept="image/*,video/*,audio/*,.pdf,.zip"><button type="button" class="chat-attach" id="chatAttach" title="Attach file">＋</button><button type="button" class="chat-record" id="chatRecord" title="Record voice">●</button><textarea id="chatText" rows="1" maxlength="3000" placeholder="Write a message…"></textarea><button class="btn primary" type="submit">Send</button></form>`;
+      const render=msgs=>{const box=document.getElementById('chatMessages');box.innerHTML=msgs.length?msgs.map(m=>`<div class="chat-msg ${m.sender_id===me.id?'mine':''}">${m.attachment_url?`<a class="chat-attachment" href="${esc(m.attachment_url)}" target="_blank">${m.attachment_type?.startsWith('audio/')?'🎙 Voice message':m.attachment_type?.startsWith('image/')?`<img src="${esc(m.attachment_url)}" alt="attachment">`:'📎 '+esc(m.attachment_name||'Attachment')}</a>`:''}${m.content?`<div class="bubble">${esc(m.content)}</div>`:''}<time>${timeAgo(new Date(m.created_at).getTime())}</time></div>`).join(''):'<div class="chat-no-messages">No messages yet. Say hello 👋</div>';box.scrollTop=box.scrollHeight;};
+      const load=async()=>{try{const rr=await cloudCall('chat-history',{username});render(rr.messages||[])}catch{}};
+      await load(); await loadConversations();
+      document.getElementById('chatCompose').onsubmit=async e=>{e.preventDefault();const text=document.getElementById('chatText').value.trim();if(!text)return;const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;try{await cloudCall('chat-send',{username,content:text});document.getElementById('chatText').value='';await load();await loadConversations()}catch(err){notify(err.message||'Could not send message.')}finally{btn.disabled=false}};
+      document.getElementById('chatAttach').onclick=()=>document.getElementById('chatFile').click();
+      document.getElementById('chatFile').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const ext=(f.name.split('.').pop()||'bin').toLowerCase();const up=await cloudCall('chat-upload-url',{username,ext,mime:f.type,name:f.name});const {error}=await window.__ARAB_SB.storage.from('chat').uploadToSignedUrl(up.path,up.token,f);if(error)throw error;const pub=window.__ARAB_SB.storage.from('chat').getPublicUrl(up.path).data.publicUrl;await cloudCall('chat-send',{username,attachmentUrl:pub,attachmentType:f.type,attachmentName:f.name});await load();await loadConversations()}catch(err){notify(err.message||'Upload failed.')}e.target.value=''};
+      let recording=false,rec=null,chunks=[];
+      document.getElementById('chatRecord').onclick=async()=>{const b=document.getElementById('chatRecord');if(!recording){try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});rec=new MediaRecorder(stream);chunks=[];rec.ondataavailable=e=>chunks.push(e.data);rec.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());const blob=new Blob(chunks,{type:rec.mimeType||'audio/webm'});try{const up=await cloudCall('chat-upload-url',{username,ext:'webm',mime:blob.type,name:'voice-message.webm'});const {error}=await window.__ARAB_SB.storage.from('chat').uploadToSignedUrl(up.path,up.token,blob);if(error)throw error;const pub=window.__ARAB_SB.storage.from('chat').getPublicUrl(up.path).data.publicUrl;await cloudCall('chat-send',{username,attachmentUrl:pub,attachmentType:blob.type,attachmentName:'Voice message'}) ;await load();await loadConversations()}catch(err){notify(err.message||'Voice message failed.')}};rec.start();recording=true;b.classList.add('recording');b.textContent='■';notify('Recording… click again to send')}catch(err){notify('Microphone permission is required.')}}else{recording=false;b.classList.remove('recording');b.textContent='●';rec?.stop()}};
+    }catch(e){pane().innerHTML=`<div class="chat-empty">${esc(e.message||'Could not open conversation.')}</div>`}
+  }
+  await loadConversations();
+  if(initialDesigner) await openChat(initialDesigner);
+  clearInterval(timer); timer=setInterval(()=>{if(active)openChat(active);else loadConversations()},5000);
 }
 
 function about(){
@@ -539,7 +602,7 @@ async function profile(username){
   const works=(cloudState.works?.[d.id]||[]);
   shell(`<section class="profile-shell">
     <div class="profile-cover ${banner?'has-banner':'no-banner'}" ${banner?`style="background-image:url('${esc(banner)}')"`:''}><div class="cover-shade"></div><div class="cover-top"><span>${banner?'DISCORD PROFILE BANNER':'NO DISCORD BANNER'}</span>${same?'<span class="cover-safe">PROFILE HEADER</span>':''}</div></div>
-    <div class="profile-main"><div class="profile-heading"><img class="profile-avatar-v2" src="${esc(safeImage(d.avatar))}" alt="${esc(d.display_name||d.username)}"><div class="profile-title"><div class="verified-line"><span class="status-dot"></span> Designer profile <span class="badge-row">${renderBadges(d)}</span></div><h1>${esc(d.display_name||d.username)}</h1><p>@${esc(d.username)}</p></div><div class="profile-actions">${same?'<a class="btn" href="/settings">Edit profile</a>':`<a class="btn primary" href="/contact?designer=${encodeURIComponent(target)}">Contact designer ↗</a>`}</div></div>
+    <div class="profile-main"><div class="profile-heading"><img class="profile-avatar-v2" src="${esc(safeImage(d.avatar))}" alt="${esc(d.display_name||d.username)}"><div class="profile-title"><div class="verified-line"><span class="status-dot"></span> Designer profile <span class="badge-row">${renderBadges(d)}</span></div><h1>${esc(d.display_name||d.username)}</h1><p>@${esc(d.username)}</p></div><div class="profile-actions">${same?'<a class="btn" href="/settings">Edit profile</a>':`<a class="btn primary" href="/messages?designer=${encodeURIComponent(target)}">Contact designer ↗</a>`}</div></div>
       <div class="profile-bio"><p>${esc(d.bio||'Designer focused on visual identity and digital experiences.')}</p><div class="profile-pills"><span>Graphic Design</span><span>UI/UX</span><span>Visual Identity</span><span>Creative Direction</span></div>${socialBadges(d)}</div>
       <div class="profile-stats"><div><strong>${formatNumber(d.views||0)}</strong><span>Profile views</span></div><div><strong>${works.length}</strong><span>Projects</span></div><div><strong>Discord</strong><span>Connected</span></div><div><strong>${d.verified?'Verified':'Open'}</strong><span>Status</span></div></div>
     </div></section>
@@ -711,6 +774,8 @@ async function route(){
   if(p==='/login'||p==='/login.html')return login();
   if(p==='/about'||p==='/about.html')return about();
   if(p==='/designers'||p==='/designers.html')return await designers();
+  if(p==='/works'||p==='/works.html') { await loadCloudState(); return worksPage(); }
+  if(p==='/messages'||p==='/messages.html') return await messagesPage();
   if(p==='/contact'||p==='/contact.html')return contact();
   if(p==='/settings'||p==='/settings.html')return await settings();
   if(p==='/admin'||p==='/admin.html')return await adminPage();
