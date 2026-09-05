@@ -272,3 +272,87 @@ body:before{background:radial-gradient(circle at 50% -20%,rgba(63,111,255,.16),t
     word-spacing: 1px;
   }
 }
+
+/* v36 responsive polish */
+.social-badge{padding:6px;border-radius:11px;width:38px;height:38px;justify-content:center;gap:0}
+.social-badge .sb-code{width:24px;height:24px;border-radius:8px;font-size:0}
+.social-badge .sb-code svg{width:17px;height:17px;display:block}
+.social-badge > span:last-child{display:none}
+
+/* Messenger: keep the people list visible on phones so incoming chats are discoverable. */
+@media(max-width:760px){
+  .messages-page{padding:28px 10px 60px}
+  .messages-head{align-items:flex-start;gap:10px}
+  .messages-head h1{font-size:28px;line-height:1.15}
+  .messenger{height:calc(100svh - 150px);min-height:560px;grid-template-columns:1fr;grid-template-rows:180px minmax(0,1fr);border-radius:18px}
+  .conversation-list{display:block;border-right:0;border-bottom:1px solid var(--line);padding:7px;overflow-x:hidden;overflow-y:auto}
+  .conversation{padding:9px 10px;border-radius:11px}
+  .conversation img{width:36px;height:36px}
+  .conversation small{max-width:55vw}
+  .chat-pane{min-height:0;grid-row:2}
+  .chat-top{padding:10px 12px;min-height:62px}
+  .chat-top img{width:36px;height:36px}
+  .chat-messages{padding:12px 10px}
+  .chat-msg{max-width:92%}
+  .chat-compose{padding:8px;gap:6px}
+  .chat-compose textarea{min-height:40px;padding:10px;font-size:13px}
+  .chat-compose .btn{padding:9px 11px;min-height:40px}
+  .chat-attach,.chat-record{width:40px;height:40px;flex:none}
+
+  /* Publish studio: all controls remain reachable on mobile. */
+  .publish-studio{min-height:100svh}
+  .publish-topbar{height:56px;padding:0 9px;gap:7px}
+  .publish-brand{gap:8px;font-size:15px;min-width:0}
+  .publish-back{width:28px;height:28px;font-size:22px;flex:none}
+  .publish-actions{gap:6px}
+  .publish-actions .btn{padding:8px 10px;font-size:10px}
+  .publish-workspace{display:flex;flex-direction:column;min-height:0}
+  .publish-canvas{padding:10px;background:#f1f1f1}
+  .publish-canvas-inner{width:100%;min-height:0;display:block}
+  .publish-canvas-inner #publishPreview{min-height:360px;padding:30px 16px}
+  .publish-placeholder h2{font-size:19px;line-height:1.25}
+  .publish-placeholder p{font-size:12px;line-height:1.55;margin-bottom:20px}
+  .publish-sidebar{display:block;order:2;width:100%;min-height:0;border-left:0;border-top:1px solid #ddd;overflow:visible}
+  .publish-tools button,.publish-edit-tools button{height:64px}
+  .publish-tools span,.publish-edit-tools span{font-size:16px}
+  .publish-tools b,.publish-edit-tools b{font-size:10px}
+  .publish-custom-button{padding:13px}
+  .publish-assets{padding-bottom:14px}
+  .publish-block-list{padding:8px}
+  .publish-block-row{display:grid;grid-template-columns:24px minmax(0,1fr) auto auto auto;align-items:center;gap:5px}
+  .publish-block-name{min-width:0}
+  .publish-layout,.publish-gap{width:52px;height:30px}
+  .publish-cover-preview{min-height:0;aspect-ratio:16/9}
+  .publish-cover-preview img{object-fit:cover}
+  .crop-card{width:calc(100vw - 18px);max-height:94svh}
+  .crop-stage{padding:5px}
+  .crop-stage canvas{max-height:46svh}
+  .crop-controls{padding:9px 0}
+  .crop-actions{position:sticky;bottom:0;background:inherit;padding-top:6px}
+  .publish-details-wide{width:calc(100vw - 12px);max-height:96svh;border-radius:16px}
+  .publish-details-wide .modal-head{padding:15px}
+  .publish-details-wide .modal-head h3{font-size:17px}
+  .publish-modal-subtitle{font-size:10px;line-height:1.45}
+  .publish-form-grid{display:flex;flex-direction:column;min-height:0}
+  .publish-form-preview{padding:13px;border-right:0;border-bottom:1px solid rgba(255,255,255,.08)}
+  .publish-preview-heading{display:block}
+  .publish-preview-heading .btn{margin-top:9px;width:100%}
+  .publish-cover-large{width:100%;aspect-ratio:16/9;height:auto}
+  .publish-form-fields{padding:14px;max-height:none;overflow:visible}
+  .publish-form-fields .input,.publish-form-fields .textarea,.publish-form-fields select{font-size:13px}
+  .publish-form-fields .textarea{min-height:110px}
+  .publish-modal-footer{padding:12px;align-items:stretch;flex-direction:column;gap:10px}
+  .publish-footer-note{line-height:1.45}
+  .publish-footer-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .publish-footer-actions .btn{width:100%}
+}
+@media(max-width:420px){
+  .messages-head .messages-live{font-size:8px;padding:6px 8px}
+  .messenger{grid-template-rows:165px minmax(0,1fr)}
+  .conversation b{font-size:11px}
+  .conversation small{font-size:10px}
+  .publish-actions .publish-draft{display:none}
+  .publish-actions .publish-green{padding:8px 12px}
+  .publish-block-row{grid-template-columns:22px minmax(0,1fr) auto}
+  .publish-block-row .publish-layout,.publish-block-row .publish-gap{display:none}
+}

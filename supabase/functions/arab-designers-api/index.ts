@@ -70,18 +70,35 @@ async function chatSummary(userId: string) {
     .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
     .order('created_at',{ascending:false}).limit(500)
   if(error) throw error
+
   const map:any = {}
   for(const m of (data||[])){
     const other=m.sender_id===userId?m.receiver_id:m.sender_id
+    if(!other) continue
     if(!map[other]) map[other]={last:m,unread:0}
     if(m.receiver_id===userId && !m.read_at) map[other].unread++
   }
   const ids=Object.keys(map)
   if(!ids.length) return []
-  const {data:profiles,error:pe}=await admin.from('profiles').select('discord_id,username,display_name,avatar').in('discord_id',ids)
+
+  const {data:profiles,error:pe}=await admin.from('profiles')
+    .select('discord_id,username,display_name,avatar')
+    .in('discord_id',ids)
   if(pe) throw pe
-  return (profiles||[]).map((p:any)=>({username:p.username,display_name:p.display_name,avatar:p.avatar,last:map[p.discord_id].last,unread:map[p.discord_id].unread}))
-    .sort((a:any,b:any)=>new Date(b.last.created_at).getTime()-new Date(a.last.created_at).getTime())
+  const pm:any=Object.fromEntries((profiles||[]).map((p:any)=>[p.discord_id,p]))
+
+  // Keep every conversation even if an older message points to a profile
+  // that has not been synced yet. The unread message must never disappear.
+  return ids.map(id=>{
+    const p=pm[id]
+    return {
+      username:p?.username || id,
+      display_name:p?.display_name || `Discord user ${String(id).slice(-4)}`,
+      avatar:p?.avatar || null,
+      last:map[id].last,
+      unread:map[id].unread,
+    }
+  }).sort((a:any,b:any)=>new Date(b.last.created_at).getTime()-new Date(a.last.created_at).getTime())
 }
 
 async function handle(req: Request) {

@@ -81,7 +81,7 @@ function renderBadges(d){ return badgeList(d).map(badgeImg).join(''); }
 
 // ---- Social platform badges (auto from Discord connections + manual links) ----
 const PLATFORM_META = {
-  youtube:{label:'YouTube',code:'YT',color:'#ff2d2d'},
+  youtube:{label:'YouTube',code:'youtube',color:'#ff2d2d'},
   twitter:{label:'X',code:'X',color:'#e7e9ee'},
   x:{label:'X',code:'X',color:'#e7e9ee'},
   twitch:{label:'Twitch',code:'TW',color:'#9146ff'},
@@ -100,6 +100,11 @@ const PLATFORM_META = {
 };
 const KNOWN_CONNECTION_TYPES = ['youtube','twitter','twitch','instagram','tiktok','github','spotify','reddit','steam','facebook'];
 const LINK_PLATFORM_OPTIONS = ['website','behance','dribbble','linkedin','youtube','twitter','instagram','tiktok','twitch','github','other'];
+function socialIcon(type){
+  const t=String(type||'').toLowerCase();
+  if(t==='youtube') return '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.8V8.2l6.5 3.8-6.5 3.8Z"/></svg>';
+  return `<span class="sb-letter">${esc(platformMeta(t).code)}</span>`;
+}
 function platformMeta(type){ return PLATFORM_META[String(type||'').toLowerCase()] || PLATFORM_META.other; }
 function connectionUrl(type,name,id){
   switch(String(type||'').toLowerCase()){
@@ -128,7 +133,7 @@ function socialBadges(d){
   const manual=(Array.isArray(d.links)?d.links:[]).filter(l=>l&&l.url).map(l=>({type:l.type,label:platformMeta(l.type).label,url:l.url}));
   const all=[...conns,...manual];
   if(!all.length) return '';
-  return `<div class="social-badges">${all.map(l=>{const m=platformMeta(l.type);return `<a class="social-badge" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" style="--pc:${m.color}"><span class="sb-code">${esc(m.code)}</span><span>${esc(l.label)}</span></a>`;}).join('')}</div>`;
+  return `<div class="social-badges">${all.map(l=>{const m=platformMeta(l.type);return `<a class="social-badge" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" style="--pc:${m.color}"><span class="sb-code">${socialIcon(l.type)}</span><span>${esc(l.label)}</span></a>`;}).join('')}</div>`;
 }
 function linkRow(l={}){
   const type=String(l.type||'website').toLowerCase();
@@ -417,7 +422,7 @@ async function initMessenger(initialDesigner=''){
     try{
       const r=await cloudCall('chat-history',{username});
       const p=r.profile||{username,display_name:username,avatar:FALLBACK_LOGO};
-      pane().innerHTML=`<div class="chat-top"><img src="${esc(safeImage(p.avatar))}"><div><b>${esc(p.display_name||p.username)}</b><span>@${esc(p.username)}</span></div><a class="btn" href="/profile/${encodeURIComponent(p.username)}">Profile ↗</a></div><div class="chat-messages" id="chatMessages"></div><form class="chat-compose" id="chatCompose"><input type="file" id="chatFile" hidden accept="image/*,video/*,audio/*,.pdf,.zip,.rar,.doc,.docx"><button type="button" class="chat-attach" id="chatAttach" title="Attach file">＋</button><button type="button" class="chat-record" id="chatRecord" title="Record voice">●</button><textarea id="chatText" rows="1" maxlength="3000" placeholder="Write a message…"></textarea><button class="btn primary" type="submit">Send</button></form>`;
+      pane().innerHTML=`<div class="chat-top"><img src="${esc(safeImage(p.avatar))}"><div><b>${esc(p.display_name||p.username)}</b><span>@${esc(p.username)}</span></div><a class="btn" href="${profileShareUrl(p.username)}">Profile ↗</a></div><div class="chat-messages" id="chatMessages"></div><form class="chat-compose" id="chatCompose"><input type="file" id="chatFile" hidden accept="image/*,video/*,audio/*,.pdf,.zip,.rar,.doc,.docx"><button type="button" class="chat-attach" id="chatAttach" title="Attach file">＋</button><button type="button" class="chat-record" id="chatRecord" title="Record voice">●</button><textarea id="chatText" rows="1" maxlength="3000" placeholder="Write a message…"></textarea><button class="btn primary" type="submit">Send</button></form>`;
       renderMessages(r.messages||[]);
       const text=document.getElementById('chatText');
       text?.focus();
