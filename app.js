@@ -1,4 +1,20 @@
 const app = document.getElementById('app');
+
+// Global project viewer close handler. Kept outside the dynamically-rendered modal
+// so the close button keeps working even after the modal HTML is recreated.
+window.closeWorkViewerModal = function(){
+  const modal = document.getElementById('workViewer');
+  if(modal) modal.classList.remove('open');
+  document.body.classList.remove('modal-open');
+};
+
+document.addEventListener('click', function(e){
+  const closeBtn = e.target.closest && e.target.closest('#closeWorkViewer');
+  if(closeBtn){ e.preventDefault(); e.stopPropagation(); window.closeWorkViewerModal(); return; }
+  const modal = e.target.closest && e.target.closest('#workViewer');
+  if(modal && e.target === modal) window.closeWorkViewerModal();
+}, true);
+
 const toast = document.getElementById('toast');
 
 const LOGO = '/logo-transparent.png';
@@ -803,7 +819,7 @@ function setMeta(name, content, property=false){
   if(!el){el=document.createElement('meta');el.setAttribute(attr,name);document.head.appendChild(el)} el.setAttribute('content',content||'');
 }
 function setProfileMeta(d, username){
-  const title=`${d?.display_name||username} - Profile`;
+  const title='Arab Designers - Profile';
   const desc=`${d?.bio||'Designer profile, selected work and creative direction.'}`.replace(/\s+/g,' ').slice(0,160);
   document.title=title; setMeta('description',desc); setMeta('og:title',title,true); setMeta('og:description',desc,true); setMeta('og:site_name','Arab Designers',true); setMeta('og:image',profileBanner(d)||BANNER,true); setMeta('twitter:title',title); setMeta('twitter:description',desc); setMeta('twitter:image',profileBanner(d)||BANNER);
 }
@@ -835,7 +851,7 @@ function worksSection(profileId,same,displayName){
 }
 function modalsMarkup(same){
   return `<div class="modal-overlay" id="workViewer"><div class="modal-card wide">
-    <div class="modal-head"><h3 id="workViewerTitle"></h3><button class="icon-btn" id="closeWorkViewer" type="button">✕</button></div>
+    <div class="modal-head"><h3 id="workViewerTitle"></h3><button class="icon-btn" id="closeWorkViewer" type="button" onclick="window.closeWorkViewerModal && window.closeWorkViewerModal()" aria-label="Close project">✕</button></div>
     <div class="work-viewer-media" id="workViewerMedia"></div>
     <p class="work-viewer-desc" id="workViewerDesc"></p>
     <div class="work-viewer-stats"><span id="workViewerViews"></span><button class="work-like lg" id="workViewerLike" type="button"></button></div>
