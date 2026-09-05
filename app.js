@@ -256,7 +256,7 @@ async function publishPage(){
   <input id="publishVideoFile" type="file" hidden accept="video/mp4,video/webm,video/quicktime,audio/mpeg,audio/wav,audio/ogg,audio/mp4">
   <input id="publishAssetFiles" type="file" hidden multiple>
   <div class="modal-overlay" id="cropModal"><div class="modal-card crop-card"><div class="modal-head"><h3>Crop image</h3><button class="icon-btn" id="closeCrop" type="button">✕</button></div><p class="form-note">All project images are normalized to <strong>1600 × 900</strong>. Drag to position and use the slider to zoom.</p><div class="crop-stage"><canvas id="cropCanvas" width="800" height="450"></canvas></div><div class="crop-controls"><span>−</span><input id="cropZoom" type="range" min="1" max="3" step="0.01" value="1"><span>＋</span></div><div class="crop-actions"><button class="btn" id="cropCancel" type="button">Cancel</button><button class="btn primary" id="cropApply" type="button">Apply</button></div></div></div>
-  <div class="modal-overlay" id="publishDetailsModal"><div class="modal-card publish-details-card publish-details-wide"><div class="modal-head"><div><h3>Publish Your Project</h3><p class="publish-modal-subtitle">Add the details people will see before they open your work.</p></div><button class="icon-btn" id="closePublishDetails" type="button">✕</button></div><form id="publishDetailsForm"><div class="publish-form-grid"><section class="publish-form-preview"><div class="publish-preview-heading"><div><b>Project Cover Preview</b><span>This is how your project cover will appear on Works and your profile.</span></div><button class="btn" type="button" id="choosePublishCoverBtn">▧ Choose cover</button></div><div class="publish-cover-large" id="publishCoverMini"><div class="publish-cover-empty"><span>＋</span><b>No cover selected</b><small>Choose a 16:9 image to preview it here.</small></div></div><div class="publish-cover-requirements"><div><b>Cover requirements</b><span>Recommended: 1600 × 900 px · 16:9</span><span>JPG, PNG or GIF · Max 30MB</span></div><button class="btn" type="button" id="changeCoverBtn">Change Cover</button></div><div class="publish-cover-status" id="publishCoverStatus">No cover selected yet.</div></section><section class="publish-form-fields"><label class="label">Project Title <span class="required-star">*</span></label><input class="input" name="title" maxlength="120" placeholder="e.g. Brand Identity — Al Noor" required><div class="field-count" id="titleCount">0/120</div><label class="label">Project Description <span class="optional-label">optional</span></label><textarea class="textarea" name="description" maxlength="400" placeholder="Tell people about this project, your process, and what you created…"></textarea><div class="field-count" id="descriptionCount">0/400</div><label class="label">Category <span class="required-star">*</span></label><select class="input" name="category" required><option value="">Select a category</option><option>Graphic Design</option><option>Branding</option><option>UI/UX</option><option>Web Design</option><option>Illustration</option><option>Motion</option><option>Photography</option><option>3D Art</option><option>Architecture</option><option>Product Design</option><option>Typography</option><option>Other</option></select><label class="label">Tags <span class="optional-label">up to 10</span></label><div class="tag-input-wrap"><div class="tag-chips" id="publishTagChips"></div><input id="publishTagInput" class="tag-input" placeholder="Add tags (e.g. branding, uiux, logo design)…" autocomplete="off"><button type="button" id="addTagBtn" class="tag-add">＋</button></div><input type="hidden" name="tags" id="publishTagsValue"><label class="label">Tools Used <span class="optional-label">optional</span></label><input class="input" name="tools" maxlength="200" placeholder="e.g. Figma, Photoshop, Illustrator"><div class="publish-publish-summary" id="publishSummary"></div></section></div><div class="publish-modal-footer"><div class="publish-footer-note">Your cover, title and category are required. You can edit the project later.</div><div class="publish-footer-actions"><button class="btn" type="button" id="savePublishDraft">Save as Draft</button><button class="btn primary" type="submit" id="confirmPublishBtn">Publish Work ↗</button></div></div></form></div></div>
+  <div class="modal-overlay" id="publishDetailsModal"><div class="modal-card publish-details-card publish-details-wide"><div class="modal-head"><div><h3>Publish Your Project</h3><p class="publish-modal-subtitle">Add the details people will see before they open your work.</p></div><button class="icon-btn" id="closePublishDetails" type="button">✕</button></div><form id="publishDetailsForm"><div class="publish-form-grid"><section class="publish-form-preview"><div class="publish-preview-heading"><div><b>Project Cover Preview</b><span>This is how your project cover will appear on Works and your profile.</span></div><button class="btn" type="button" id="choosePublishCoverBtn">▧ Choose cover</button></div><div class="publish-cover-large" id="publishCoverMini"><div class="publish-cover-empty"><span>＋</span><b>No cover selected</b><small>Choose a 16:9 image to preview it here.</small></div></div><div class="publish-cover-requirements"><div><b>Cover requirements</b><span>Recommended: 1600 × 900 px · 16:9</span><span>JPG, PNG or GIF · Max 30MB</span></div><button class="btn" type="button" id="changeCoverBtn">Change Cover</button></div><div class="publish-cover-status" id="publishCoverStatus">No cover selected yet.</div></section><section class="publish-form-fields"><label class="label">Project Title <span class="required-star">*</span></label><input class="input" name="title" maxlength="120" placeholder="e.g. Brand Identity — Al Noor" required><div class="field-count" id="titleCount">0/120</div><label class="label">Project Description <span class="optional-label">optional</span></label><textarea class="textarea" name="description" maxlength="400" placeholder="Tell people about this project, your process, and what you created…"></textarea><div class="field-count" id="descriptionCount">0/400</div><label class="label">Category <span class="required-star">*</span></label><select class="input" name="category" required><option value="">Select a category</option><option>Graphic Design</option><option>Branding</option><option>UI/UX</option><option>Web Design</option><option>Illustration</option><option>Motion</option><option>Photography</option><option>3D Art</option><option>Architecture</option><option>Product Design</option><option>Typography</option><option>Other</option></select><label class="label">Tags <span class="optional-label">up to 10</span></label><div class="tag-input-wrap"><div class="tag-chips" id="publishTagChips"></div><input id="publishTagInput" class="tag-input" placeholder="Add tags (e.g. branding, uiux, logo design)…" autocomplete="off"><button type="button" id="addTagBtn" class="tag-add">＋</button></div><input type="hidden" name="tags" id="publishTagsValue"><label class="label">Tools Used <span class="optional-label">optional</span></label><input class="input" name="tools" maxlength="200" placeholder="e.g. Figma, Photoshop, Illustrator"><div class="publish-publish-summary" id="publishSummary"></div></section></div><div class="publish-modal-footer"><div class="publish-footer-note"><span id="publishProgressText">Your cover, title and category are required. You can edit the project later.</span><div class="publish-progress-wrap" id="publishProgressWrap" hidden><div class="publish-progress-track"><div class="publish-progress-bar" id="publishProgressBar"></div></div><b id="publishProgressPercent">0%</b></div></div><div class="publish-footer-actions"><button class="btn" type="button" id="savePublishDraft">Save as Draft</button><button class="btn primary" type="submit" id="confirmPublishBtn">Publish Work ↗</button></div></div></form></div></div>
   <div class="modal-overlay" id="toolModal"><div class="modal-card"><div class="modal-head"><h3 id="toolModalTitle">Add content</h3><button class="icon-btn" id="closeToolModal" type="button">✕</button></div><div id="toolModalBody"></div></div></div>`);
 
   const TARGET_W=1600,TARGET_H=900; let coverFile=null, stagedBlocks=[], stagedAssets=[]; let cropQueue=[], cropResolve=null, cropImg=null, cropScale=1, cropX=0, cropY=0, drag=null;
@@ -351,7 +351,76 @@ async function publishPage(){
   document.getElementById('closePublishDetails').onclick=()=>document.getElementById('publishDetailsModal').classList.remove('open');
   document.getElementById('publishDetailsModal').onclick=e=>{if(e.target.id==='publishDetailsModal')e.target.classList.remove('open')};
   async function uploadFileForWork(workId,file,mediaId){const ext=(file.name.split('.').pop()||'jpg').toLowerCase();const up=await cloudCall('work-upload-url',{workId,mediaId,ext});const {error}=await window.__ARAB_SB.storage.from('works').uploadToSignedUrl(up.path,up.token,file);if(error)throw error;return {path:up.path,url:window.__ARAB_SB.storage.from('works').getPublicUrl(up.path).data.publicUrl};}
-  document.getElementById('publishDetailsForm').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target),btn=document.getElementById('confirmPublishBtn');if(!coverFile){notify('Please choose a project cover first.');document.getElementById('choosePublishCoverBtn')?.focus();return}const title=String(fd.get('title')||'').trim();if(!title){notify('Please enter a project title.');return}if(!String(fd.get('category')||'')){notify('Please choose a category.');categoryInput.focus();return}btn.disabled=true;btn.textContent='Preparing images…';try{const croppedCover=await runCrop(coverFile);if(!croppedCover)throw new Error('Cover crop was cancelled.');const croppedBlocks=[];for(let i=0;i<stagedBlocks.length;i++){const b=stagedBlocks[i];if(b.kind==='image'&&b.file){btn.textContent=`Preparing image ${i+1}/${stagedBlocks.length}…`;const cropped=await runCrop(b.file);if(!cropped)throw new Error('Image crop was cancelled.');croppedBlocks.push({index:i,file:cropped});}}btn.textContent='Publishing…';const workId=uid();const cover=await uploadFileForWork(workId,croppedCover,'cover');const r=await cloudCall('create-work',{workId,mediaType:'image',mediaUrl:cover.url,mediaLabel:'Image',storagePath:cover.path,title:fd.get('title'),description:fd.get('description'),category:fd.get('category'),tags:publishTags,tools:fd.get('tools')});let croppedMap=new Map(croppedBlocks.map(x=>[x.index,x.file]));for(let i=0;i<stagedBlocks.length;i++){const b=stagedBlocks[i];if(b.file){const file=croppedMap.get(i)||b.file;const up=await uploadFileForWork(workId,file,`block-${i}`);await cloudCall('create-work-block',{workId,blockType:b.kind==='audio'?'audio':(b.kind==='video'?'video':'image'),mediaUrl:up.url,storagePath:up.path,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}else if(b.kind==='text'){await cloudCall('create-work-block',{workId,blockType:'text',content:b.content,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}else if(b.url){await cloudCall('create-work-block',{workId,blockType:'embed',mediaUrl:b.url,content:b.content||'',caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}}notify('Work published successfully.');location.href=profileShareUrl(me.username)+'#works';}catch(err){notify(err.message||'Could not publish work.');btn.disabled=false;btn.textContent='Publish work ↗'}};
+  const publishProgress={done:0,total:1};
+  function setPublishProgress(done,total,label){
+    publishProgress.done=Math.max(0,done); publishProgress.total=Math.max(1,total);
+    const pct=Math.min(100,Math.round((publishProgress.done/publishProgress.total)*100));
+    const bar=document.getElementById('publishProgressBar'), num=document.getElementById('publishProgressPercent'), wrap=document.getElementById('publishProgressWrap'), text=document.getElementById('publishProgressText');
+    if(wrap) wrap.hidden=false;
+    if(bar) bar.style.width=pct+'%';
+    if(num) num.textContent=pct+'%';
+    if(text) text.textContent=label||`Publishing… ${pct}% complete`;
+    const top=document.getElementById('publishNowBtn');
+    if(top) top.textContent=`Publishing ${pct}%…`;
+  }
+  function resetPublishProgress(){
+    const wrap=document.getElementById('publishProgressWrap'),bar=document.getElementById('publishProgressBar'),num=document.getElementById('publishProgressPercent'),text=document.getElementById('publishProgressText'),top=document.getElementById('publishNowBtn');
+    if(wrap) wrap.hidden=true; if(bar) bar.style.width='0%'; if(num) num.textContent='0%';
+    if(text) text.textContent='Your cover, title and category are required. You can edit the project later.';
+    if(top) top.textContent='Publish';
+  }
+  document.getElementById('publishDetailsForm').onsubmit=async e=>{
+    e.preventDefault();
+    const fd=new FormData(e.target),btn=document.getElementById('confirmPublishBtn');
+    if(btn.disabled)return;
+    if(!coverFile){notify('Please choose a project cover first.');document.getElementById('choosePublishCoverBtn')?.focus();return}
+    const title=String(fd.get('title')||'').trim();
+    if(!title){notify('Please enter a project title.');return}
+    if(!String(fd.get('category')||'')){notify('Please choose a category.');categoryInput.focus();return}
+    btn.disabled=true;
+    const fileBlocks=stagedBlocks.filter(b=>b.file).length;
+    const total=2+stagedBlocks.reduce((n,b)=>n+(b.file?2:1),0);
+    let done=0;
+    setPublishProgress(0,total,'Starting publish… 0%');
+    try{
+      // Only the main cover is cropped. Content images stay at their original dimensions.
+      setPublishProgress(done,total,'Preparing cover…');
+      const croppedCover=await runCrop(coverFile);
+      if(!croppedCover)throw new Error('Cover crop was cancelled.');
+      done++; setPublishProgress(done,total,'Cover prepared. Uploading…');
+
+      const workId=uid();
+      const cover=await uploadFileForWork(workId,croppedCover,'cover');
+      done++; setPublishProgress(done,total,`Cover uploaded · ${Math.round(done/total*100)}%`);
+
+      await cloudCall('create-work',{workId,mediaType:'image',mediaUrl:cover.url,mediaLabel:'Image',storagePath:cover.path,title:fd.get('title'),description:fd.get('description'),category:fd.get('category'),tags:publishTags,tools:fd.get('tools')});
+      for(let i=0;i<stagedBlocks.length;i++){
+        const b=stagedBlocks[i];
+        if(b.file){
+          setPublishProgress(done,total,`Uploading ${b.kind==='video'?'video':b.kind==='audio'?'audio':'image'} ${i+1}…`);
+          const up=await uploadFileForWork(workId,b.file,`block-${i}`);
+          done++; setPublishProgress(done,total,`Uploaded ${i+1}/${stagedBlocks.length} · ${Math.round(done/total*100)}%`);
+          await cloudCall('create-work-block',{workId,blockType:b.kind==='audio'?'audio':(b.kind==='video'?'video':'image'),mediaUrl:up.url,storagePath:up.path,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});
+          done++;
+        }else if(b.kind==='text'){
+          await cloudCall('create-work-block',{workId,blockType:'text',content:b.content,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});
+          done++;
+        }else if(b.url){
+          await cloudCall('create-work-block',{workId,blockType:'embed',mediaUrl:b.url,content:b.content||'',caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});
+          done++;
+        }
+        setPublishProgress(done,total,`Saving content ${i+1}/${stagedBlocks.length} · ${Math.round(done/total*100)}%`);
+      }
+      setPublishProgress(total,total,'Published successfully · 100%');
+      notify('Work published successfully.');
+      setTimeout(()=>location.href=profileShareUrl(me.username)+'#works',350);
+    }catch(err){
+      notify(err.message||'Could not publish work.');
+      const text=document.getElementById('publishProgressText'); if(text) text.textContent='Publish failed — you can try again.';
+      btn.disabled=false; btn.textContent='Publish Work ↗';
+      const top=document.getElementById('publishNowBtn'); if(top) top.textContent='Publish';
+    }
+  };
 }
 
 function worksPage(){
