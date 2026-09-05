@@ -59,6 +59,97 @@ function timeAgo(ts){
 function profileBanner(d){ return d?.banner || d?.discordBanner || ''; }
 function safeImage(url, fallback=FALLBACK_LOGO){ return url || fallback; }
 
+// ---- Profile badges (Staff, Verified, Early Supporter, Booster, Partner) ----
+const BADGE_META = {
+  staff:{img:'https://i.postimg.cc/sxkfySKJ/shield.png',label:'Staff'},
+  verified:{img:'https://i.postimg.cc/3xCr5kGW/blue-verified-check-mark-badge-design-vector.png',label:'Verified'},
+  early_supporter:{img:'https://i.postimg.cc/FzLmPzmz/elite.png',label:'Early Supporter'},
+  booster:{img:'https://i.postimg.cc/prFx0rxL/booster.png',label:'Booster'},
+  partner:{img:'https://i.postimg.cc/PJwh6Jhx/partner.png',label:'Partner'},
+};
+const TOGGLEABLE_BADGES = ['early_supporter','booster','partner'];
+function badgeImg(type){ const m=BADGE_META[type]; if(!m) return ''; return `<img class="badge-icon" src="${m.img}" alt="${esc(m.label)}" title="${esc(m.label)}" loading="lazy">`; }
+function hasBadge(d,type){ return Array.isArray(d?.badges) && d.badges.includes(type); }
+function badgeList(d){
+  const list=[];
+  if(d?.verified) list.push('verified');
+  if(d?.role==='admin'||d?.role==='staff') list.push('staff');
+  (Array.isArray(d?.badges)?d.badges:[]).forEach(b=>{ if(BADGE_META[b] && !list.includes(b)) list.push(b); });
+  return list;
+}
+function renderBadges(d){ return badgeList(d).map(badgeImg).join(''); }
+
+// ---- Social platform badges (auto from Discord connections + manual links) ----
+const PLATFORM_META = {
+  youtube:{label:'YouTube',code:'YT',color:'#ff2d2d'},
+  twitter:{label:'X',code:'X',color:'#e7e9ee'},
+  x:{label:'X',code:'X',color:'#e7e9ee'},
+  twitch:{label:'Twitch',code:'TW',color:'#9146ff'},
+  instagram:{label:'Instagram',code:'IG',color:'#ff5fa2'},
+  tiktok:{label:'TikTok',code:'TT',color:'#25f4ee'},
+  github:{label:'GitHub',code:'GH',color:'#c9cbd3'},
+  spotify:{label:'Spotify',code:'SP',color:'#1ed760'},
+  reddit:{label:'Reddit',code:'RD',color:'#ff5a1f'},
+  steam:{label:'Steam',code:'ST',color:'#66c0f4'},
+  facebook:{label:'Facebook',code:'FB',color:'#1877f2'},
+  behance:{label:'Behance',code:'BE',color:'#3b82ff'},
+  dribbble:{label:'Dribbble',code:'DR',color:'#ea4c89'},
+  linkedin:{label:'LinkedIn',code:'IN',color:'#3b9eff'},
+  website:{label:'Website',code:'●',color:'#7aa2ff'},
+  other:{label:'Link',code:'🔗',color:'#7aa2ff'},
+};
+const KNOWN_CONNECTION_TYPES = ['youtube','twitter','twitch','instagram','tiktok','github','spotify','reddit','steam','facebook'];
+const LINK_PLATFORM_OPTIONS = ['website','behance','dribbble','linkedin','youtube','twitter','instagram','tiktok','twitch','github','other'];
+function platformMeta(type){ return PLATFORM_META[String(type||'').toLowerCase()] || PLATFORM_META.other; }
+function connectionUrl(type,name,id){
+  switch(String(type||'').toLowerCase()){
+    case 'youtube': return `https://www.youtube.com/channel/${id}`;
+    case 'twitter': return `https://x.com/${name}`;
+    case 'twitch': return `https://twitch.tv/${name}`;
+    case 'instagram': return `https://instagram.com/${name}`;
+    case 'tiktok': return `https://www.tiktok.com/@${name}`;
+    case 'github': return `https://github.com/${name}`;
+    case 'spotify': return `https://open.spotify.com/user/${id}`;
+    case 'reddit': return `https://www.reddit.com/user/${name}`;
+    case 'steam': return `https://steamcommunity.com/profiles/${id}`;
+    case 'facebook': return `https://facebook.com/${id}`;
+    default: return '#';
+  }
+}
+function mapConnections(raw){
+  if(!Array.isArray(raw)) return [];
+  return raw
+    .filter(c => c && c.visibility===1 && KNOWN_CONNECTION_TYPES.includes(String(c.type).toLowerCase()))
+    .map(c => ({type:String(c.type).toLowerCase(), name:c.name, id:c.id, url:connectionUrl(c.type,c.name,c.id)}))
+    .slice(0,10);
+}
+function socialBadges(d){
+  const conns=(Array.isArray(d.connections)?d.connections:[]).filter(c=>c&&c.url&&c.url!=='#').map(c=>({type:c.type,label:c.name||platformMeta(c.type).label,url:c.url}));
+  const manual=(Array.isArray(d.links)?d.links:[]).filter(l=>l&&l.url).map(l=>({type:l.type,label:platformMeta(l.type).label,url:l.url}));
+  const all=[...conns,...manual];
+  if(!all.length) return '';
+  return `<div class="social-badges">${all.map(l=>{const m=platformMeta(l.type);return `<a class="social-badge" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" style="--pc:${m.color}"><span class="sb-code">${esc(m.code)}</span><span>${esc(l.label)}</span></a>`;}).join('')}</div>`;
+}
+function linkRow(l={}){
+  const type=String(l.type||'website').toLowerCase();
+  const opts=LINK_PLATFORM_OPTIONS.map(o=>`<option value="${o}" ${o===type?'selected':''}>${esc(platformMeta(o).label)}</option>`).join('');
+  return `<div class="link-row" data-row><select class="select link-type">${opts}</select><input class="input link-url" placeholder="https://…" value="${esc(l.url||'')}"><button class="icon-btn danger" type="button" data-remove-row title="Remove">✕</button></div>`;
+}
+function wireLinkEditor(){
+  const rows=document.getElementById('linkRows');
+  const addBtn=document.getElementById('addLinkBtn');
+  if(!rows||!addBtn)return;
+  const wireRemovers=()=>rows.querySelectorAll('[data-remove-row]').forEach(b=>b.onclick=()=>b.closest('[data-row]')?.remove());
+  addBtn.onclick=()=>{ rows.insertAdjacentHTML('beforeend', linkRow({})); wireRemovers(); };
+  wireRemovers();
+}
+function collectLinkRows(){
+  return Array.from(document.querySelectorAll('#linkRows [data-row]')).map(row=>({
+    type:row.querySelector('.link-type')?.value||'website',
+    url:row.querySelector('.link-url')?.value.trim()||''
+  })).filter(l=>l.url).slice(0,10);
+}
+
 function nav(){
   const profile = me ? `/profile/${encodeURIComponent(me.username)}` : '/login';
   const mobileAuth = me ? `<a class="mobile-only" href="${profile}">My profile ↗</a><a class="mobile-only" href="/settings">Settings</a>${isAdmin()?'<a class="mobile-only admin-nav-link" href="/admin">Admin ↗</a>':''}` : `<a class="mobile-only" href="/login.html">Sign in with Discord ↗</a>`;
@@ -107,7 +198,7 @@ async function home(){
   </section>
   <section class="cloud-status" id="cloudStatus"><span class="status-dot"></span><span>Designer profiles are synced from the cloud.</span></section>
   <section class="section intro-section"><div class="section-label">THE PLATFORM</div><div class="intro-grid"><h2>A sharper home for<br><span>Arab creative talent.</span></h2><div><p>Arab Designers is built around the people behind the work — with public profiles, clear identities and a direct way to discover and contact designers.</p><a class="text-link" href="/designers">Browse the directory →</a></div></div></section>
-  <section class="section home-cta"><div><div class="section-label">JOIN THE NETWORK</div><h2>Put your name<br><span>on the directory.</span></h2><p>Sign in with Discord and your designer profile will be created in the cloud and appear automatically on the Designers page.</p></div><a class="btn primary xl" href="/login.html">Create your profile ↗</a></section>`);
+  <section class="section home-cta"><div><div class="section-label">JOIN THE NETWORK</div><h2>Put your name<br><span>on the directory.</span></h2><p>Sign in with Discord and your designer profile will be created in the cloud and appear automatically on the Designers page.</p></div><a class="btn primary xl" href="/designers">Explore Designers Now ↗</a></section>`);
   document.body.classList.add('home-active');
 }
 
@@ -120,29 +211,43 @@ function about(){
 function contact(){
   const params=new URLSearchParams(location.search);
   const designer=(params.get('designer')||'').trim();
+  const points=`<div class="contact-points">
+        <div><b>Response time</b><span>Usually within 24–48 hours.</span></div>
+        <div><b>Delivery</b><span>Sent straight to our Discord from your account.</span></div>
+        <div><b>Privacy</b><span>Only visible to the Arab Designers team.</span></div>
+      </div>`;
+  if(!me){
+    shell(`<section class="contact-layout">
+      <div class="contact-copy">
+        <div class="section-label">GET IN TOUCH</div>
+        <h1>Start a<br><span>project.</span></h1>
+        <p>${designer?`Send a message about working with <b>@${esc(designer)}</b> — `:'Tell us about your project — '}it goes straight to the Arab Designers Discord, sent from your Discord account.</p>
+        ${points}
+      </div>
+      <div class="contact-form">
+        <div class="form-form-head"><span>SIGN IN REQUIRED</span><small>Contact via Discord</small></div>
+        <p class="form-note" style="font-size:12px;line-height:1.8;margin:16px 0 20px">Connect your Discord account to send a message. This way the message clearly comes from you — no email needed, and we know exactly who to reply to.</p>
+        <a class="btn primary xl full" href="/login.html">Continue with Discord ↗</a>
+      </div>
+    </section>`);
+    return;
+  }
   shell(`<section class="contact-layout">
     <div class="contact-copy">
       <div class="section-label">GET IN TOUCH</div>
       <h1>Start a<br><span>project.</span></h1>
       <p>${designer?`Send a message about working with <b>@${esc(designer)}</b> — `:'Tell us about your project — '}it goes straight to the Arab Designers Discord.</p>
-      <div class="contact-points">
-        <div><b>Response time</b><span>Usually within 24–48 hours.</span></div>
-        <div><b>Delivery</b><span>Sent directly to our Discord, no account needed.</span></div>
-        <div><b>Privacy</b><span>Only visible to the Arab Designers team.</span></div>
-      </div>
+      ${points}
     </div>
     <form id="contactForm" class="contact-form">
-      <div class="form-form-head"><span>NEW MESSAGE</span><small>We reply on Discord</small></div>
-      <div class="form-grid">
-        <div><label class="label">Your name</label><input class="input" name="name" required></div>
-        <div><label class="label">Discord or email</label><input class="input" name="contact_info" required></div>
-      </div>
+      <div class="form-form-head"><span>NEW MESSAGE</span><small>Sending as you</small></div>
+      <div class="contact-sender"><img src="${esc(safeImage(me.avatar))}" alt=""><div><strong>${esc(me.display_name||me.username)}</strong><span>@${esc(me.username)}</span></div></div>
       <label class="label">Subject</label>
       <input class="input" name="subject" value="${designer?`Project with @${esc(designer)}`:''}" required>
       <label class="label">Message</label>
       <textarea class="textarea" name="message" required placeholder="Tell us about your project…"></textarea>
       <button class="btn primary" type="submit">Send message ↗</button>
-      <p class="form-note">Sent directly to the Arab Designers Discord — no account needed.</p>
+      <p class="form-note">Sent directly to the Arab Designers Discord as @${esc(me.username)} — no email needed.</p>
     </form>
   </section>`);
   document.getElementById('contactForm').onsubmit=async e=>{
@@ -153,14 +258,14 @@ function contact(){
     btn.disabled=true;btn.textContent='Sending…';
     try{
       const fields=[
-        {name:'From',value:data.name||'Unknown',inline:true},
-        {name:'Contact',value:data.contact_info||'—',inline:true}
+        {name:'From',value:`${me.display_name||me.username} (@${me.username})`,inline:true},
+        {name:'Discord ID',value:String(me.id||'—'),inline:true}
       ];
       if(designer)fields.push({name:'About designer',value:'@'+designer,inline:true});
       fields.push({name:'Message',value:String(data.message||'').slice(0,1000)});
       const r=await fetch(DISCORD_WEBHOOK_URL,{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({embeds:[{title:data.subject||'New contact form message',color:0x5b8cff,fields,timestamp:new Date().toISOString()}]})
+        body:JSON.stringify({embeds:[{title:data.subject||'New contact form message',color:0x5b8cff,author:{name:`${me.display_name||me.username} (@${me.username})`,icon_url:me.avatar},fields,timestamp:new Date().toISOString()}]})
       });
       if(!r.ok)throw new Error('Could not deliver the message to Discord (status '+r.status+').');
       notify('Message sent — we will get back to you on Discord.');
@@ -187,18 +292,17 @@ async function designers(){
 }
 function designerCard(u,i){
   const banner=profileBanner(u);
-  const badge=u.role==='admin'||u.role==='staff'?'<span class="staff-badge" title="Staff">🛡 Staff</span>':'';
-  const verified=u.verified?'<span class="verified-badge" title="Verified">✓</span>':'';
+  const badges=renderBadges(u);
+  const labels=badgeList(u).map(b=>BADGE_META[b].label);
   const tagline=u.bio?esc(String(u.bio).replace(/\s+/g,' ').slice(0,90)):'Designer profile on Arab Designers.';
   return `<a class="designer-card-v2" href="/profile/${encodeURIComponent(u.username)}">
     <div class="dc-banner ${banner?'':'blank'}" ${banner?`style="background-image:url('${esc(banner)}')"`:''}></div>
     <img class="dc-avatar" src="${esc(safeImage(u.avatar))}" alt="">
     <div class="dc-body">
-      <div class="dc-name">${esc(u.display_name||u.username)} ${verified}</div>
+      <div class="dc-name">${esc(u.display_name||u.username)}${badges?`<span class="badge-row">${badges}</span>`:''}</div>
       <div class="dc-handle">@${esc(u.username)}</div>
-      ${badge?`<div class="dc-role">${badge}</div>`:''}
       <p class="dc-tagline">${tagline}</p>
-      <div class="dc-stats"><span>${u.verified?'✓ Verified designer':'◉ Community member'}</span><span>${banner?'Discord banner':'Arab Designers'}</span></div>
+      <div class="dc-stats"><span>${labels.length?labels.join(' · '):'◉ Community member'}</span><span>${banner?'Discord banner':'Arab Designers'}</span></div>
     </div>
   </a>`;
 }
@@ -220,14 +324,14 @@ async function profile(username){
   const profiles=readProfiles();
   let d=profiles[target];
   if(!d){
-    d={username:target,display_name:same?(me.display_name||me.username):target,avatar:same?me.avatar:EYAD,banner:same?me.banner:'',discordBanner:same?me.banner:'',bio:'Designer focused on visual identity and digital experiences.',links:[]};
+    d={username:target,display_name:same?(me.display_name||me.username):target,avatar:same?me.avatar:EYAD,banner:same?me.banner:'',discordBanner:same?me.banner:'',bio:'Designer focused on visual identity and digital experiences.',links:[],connections:[],badges:[]};
   }
   const banner=profileBanner(d);
   setProfileMeta(d,target);
   shell(`<section class="profile-shell">
     <div class="profile-cover ${banner?'has-banner':'no-banner'}" ${banner?`style="background-image:url('${esc(banner)}')"`:''}><div class="cover-shade"></div><div class="cover-top"><span>${banner?'DISCORD PROFILE BANNER':'NO DISCORD BANNER'}</span>${same?'<span class="cover-safe">PROFILE HEADER</span>':''}</div></div>
-    <div class="profile-main"><div class="profile-heading"><img class="profile-avatar-v2" src="${esc(safeImage(d.avatar))}" alt="${esc(d.display_name||d.username)}"><div class="profile-title"><div class="verified-line"><span class="status-dot"></span> Designer profile ${d.verified?'<span class="verified-badge" title="Verified">✓</span>':''} ${d.role==='admin'?'<span class="staff-badge" title="Staff">🛡</span>':''}</div><h1>${esc(d.display_name||d.username)}</h1><p>@${esc(d.username)}</p></div><div class="profile-actions">${same?'<a class="btn" href="/settings">Edit profile</a>':'<a class="btn primary" href="/contact?designer=${encodeURIComponent(target)}">Contact designer ↗</a>'}</div></div>
-      <div class="profile-bio"><p>${esc(d.bio||'Designer focused on visual identity and digital experiences.')}</p><div class="profile-pills"><span>Graphic Design</span><span>UI/UX</span><span>Visual Identity</span><span>Creative Direction</span></div></div>
+    <div class="profile-main"><div class="profile-heading"><img class="profile-avatar-v2" src="${esc(safeImage(d.avatar))}" alt="${esc(d.display_name||d.username)}"><div class="profile-title"><div class="verified-line"><span class="status-dot"></span> Designer profile <span class="badge-row">${renderBadges(d)}</span></div><h1>${esc(d.display_name||d.username)}</h1><p>@${esc(d.username)}</p></div><div class="profile-actions">${same?'<a class="btn" href="/settings">Edit profile</a>':`<a class="btn primary" href="/contact?designer=${encodeURIComponent(target)}">Contact designer ↗</a>`}</div></div>
+      <div class="profile-bio"><p>${esc(d.bio||'Designer focused on visual identity and digital experiences.')}</p><div class="profile-pills"><span>Graphic Design</span><span>UI/UX</span><span>Visual Identity</span><span>Creative Direction</span></div>${socialBadges(d)}</div>
       <div class="profile-stats"><div><strong>2026</strong><span>Member</span></div><div><strong>Discord</strong><span>Connected</span></div><div><strong>${d.verified?'Verified':'Open'}</strong><span>Status</span></div><div><strong>Arab</strong><span>Designers</span></div></div>
     </div></section>`);
 }
@@ -280,7 +384,7 @@ async function loadCloudState(force=false){
   const map={};
   profiles.forEach(p=>map[p.username]={
     id:p.id,discord_id:p.discord_id,username:p.username,display_name:p.display_name,avatar:p.avatar||FALLBACK_LOGO,
-    banner:p.banner||p.discord_banner||'',discordBanner:p.discord_banner||'',bio:p.bio||'',links:p.links||[],verified:!!p.verified,role:p.role||'designer'
+    banner:p.banner||p.discord_banner||'',discordBanner:p.discord_banner||'',bio:p.bio||'',links:p.links||[],connections:p.connections||[],badges:p.badges||[],verified:!!p.verified,role:p.role||'designer'
   });
   cloudState={profiles:map};
   cloudLoaded=true;return cloudState;
@@ -295,25 +399,80 @@ async function adminPage(){
   }
   try{await loadCloudState(true);}catch(e){console.warn('Cloud unavailable:',e);}
   const profiles=readProfiles();
-  const rows=Object.values(profiles).map(p=>`<div class="admin-row admin-row-card"><div class="admin-user"><img src="${esc(safeImage(p.avatar))}" alt=""><div><strong>${esc(p.display_name||p.username)}</strong><span>@${esc(p.username)}</span></div></div><div class="admin-badges">${p.verified?'<span class="verified-badge">✓</span>':''}${p.role==='admin'||p.role==='staff'?'<span class="staff-badge">🛡</span>':''}</div><div class="admin-actions"><button class="icon-btn" data-verify-user="${esc(p.username)}">${p.verified?'Unverify':'Verify'}</button><button class="icon-btn" data-staff-user="${esc(p.username)}">${p.role==='staff'?'Remove staff':'Make staff'}</button></div></div>`).join('');
+  const rows=Object.values(profiles).map(p=>`<div class="admin-row admin-row-card"><div class="admin-user"><img src="${esc(safeImage(p.avatar))}" alt=""><div><strong>${esc(p.display_name||p.username)}</strong><span>@${esc(p.username)}</span></div></div><div class="admin-badges">${renderBadges(p)}</div><div class="admin-actions"><button class="icon-btn" data-verify-user="${esc(p.username)}">${p.verified?'Unverify':'Verify'}</button><button class="icon-btn" data-staff-user="${esc(p.username)}">${p.role==='staff'?'Remove staff':'Make staff'}</button>${TOGGLEABLE_BADGES.map(b=>`<button class="icon-btn" data-badge-user="${esc(p.username)}" data-badge-type="${b}">${hasBadge(p,b)?`Remove ${BADGE_META[b].label}`:`Give ${BADGE_META[b].label}`}</button>`).join('')}</div></div>`).join('');
   shell(`<section class="settings-head admin-page-head"><div><div class="section-label">ADMIN CONTROL</div><h1>Manage the<br><span>community.</span></h1><p>Verify designers and manage Staff badges from the admin account.</p></div><div class="settings-head-actions"><a class="btn" href="/designers">View directory ↗</a><a class="btn" href="/settings">Settings</a></div></section><section class="section admin-dashboard"><div class="admin-dashboard-head"><div><b>${Object.keys(profiles).length}</b><span>registered profiles</span></div><span class="settings-live">ADMIN · i.ixi.</span></div><div class="admin-list">${rows||'<p class="form-note">No designer accounts have joined yet.</p>'}</div></section>`);
   document.querySelectorAll('[data-verify-user],[data-staff-user]').forEach(b=>b.onclick=async()=>{const username=b.dataset.verifyUser||b.dataset.staffUser;const p=profiles[username];const action=b.dataset.verifyUser?'set-verification':'set-staff';try{const r=await cloudCall(action,{username,enabled:b.dataset.verifyUser? !p.verified : p.role!=='staff'});notify(r.message||'Updated');await adminPage();}catch(e){notify(e.message||'Admin action failed')}});
+  document.querySelectorAll('[data-badge-user]').forEach(b=>b.onclick=async()=>{const username=b.dataset.badgeUser;const type=b.dataset.badgeType;const p=profiles[username];try{const r=await cloudCall('set-badge',{username,badge:type,enabled:!hasBadge(p,type)});notify(r.message||'Updated');await adminPage();}catch(e){notify(e.message||'Admin action failed')}});
 }
 
 async function settings(){
   if(!me){location.href='/login';return}
   try{await loadCloudState();}catch(e){console.warn('Cloud unavailable:',e)}
-  const profiles=readProfiles();const d=profiles[me.username]||{username:me.username,display_name:me.display_name||me.username,avatar:me.avatar,banner:me.banner,discordBanner:me.banner,bio:'',links:[],verified:me.verified,role:me.role};
+  const profiles=readProfiles();const d=profiles[me.username]||{username:me.username,display_name:me.display_name||me.username,avatar:me.avatar,banner:me.banner,discordBanner:me.banner,bio:'',links:[],connections:[],badges:[],verified:me.verified,role:me.role};
+  const links=Array.isArray(d.links)?d.links:[];
+  const connections=Array.isArray(d.connections)?d.connections:[];
+  const linksRows=links.map(l=>linkRow(l)).join('');
+  const connChips=connections.length?connections.map(c=>{const m=platformMeta(c.type);return `<a class="conn-chip" href="${esc(c.url||'#')}" target="_blank" rel="noopener noreferrer" style="--pc:${m.color}"><b>${esc(m.code)}</b>${esc(c.name||m.label)}</a>`;}).join(''):'<span class="form-note">No linked accounts detected from Discord yet.</span>';
   const adminPanel=isAdmin()?`<section class="settings-card admin-card"><div class="settings-card-head"><div><b>Admin control</b><span>Verification and Staff management.</span></div><span class="settings-live">ADMIN</span></div><p class="form-note">Manage designer verification and Staff badges from the dedicated admin dashboard.</p><a class="btn primary" href="/admin">Open admin dashboard ↗</a></section>`:'';
-  shell(`<section class="settings-head"><div><div class="section-label">CREATOR CONTROL</div><h1>Make your profile<br><span>feel like you.</span></h1><p>Your profile identity is stored in the cloud.</p></div><div class="settings-head-actions"><a class="btn" href="/profile/${encodeURIComponent(me.username)}">View profile ↗</a><button class="btn danger" id="logoutBtn" type="button">Log out</button></div></section><section class="settings-layout"><form id="profileForm" class="settings-card"><div class="settings-card-head"><div><b>Profile identity</b><span>Shown across your public profile.</span></div><span class="settings-live">CLOUD LIVE</span></div><div class="settings-preview"><img src="${esc(safeImage(d.avatar))}" alt=""><div><strong>${esc(d.display_name||d.username)}</strong><span>@${esc(d.username)} ${d.verified?'✓':''}</span></div></div><label class="label">Display name</label><input class="input" name="display_name" value="${esc(d.display_name||d.username)}"><label class="label">Bio</label><textarea class="textarea" name="bio">${esc(d.bio||'')}</textarea><label class="label">Profile banner URL</label><input class="input" name="banner" value="${esc(d.banner||d.discordBanner||'')}" placeholder="Leave blank to use Discord banner"><button class="btn primary" type="submit">Save profile ↗</button></form></section>${adminPanel}`);
+  shell(`<section class="settings-head"><div><div class="section-label">CREATOR CONTROL</div><h1>Make your profile<br><span>feel like you.</span></h1><p>Your profile identity is stored in the cloud.</p></div><div class="settings-head-actions"><a class="btn" href="/profile/${encodeURIComponent(me.username)}">View profile ↗</a><button class="btn danger" id="logoutBtn" type="button">Log out</button></div></section><section class="settings-layout">
+    <form id="profileForm" class="settings-card">
+      <div class="settings-card-head"><div><b>Profile identity</b><span>Only your name and bio can be edited here.</span></div><span class="settings-live">CLOUD LIVE</span></div>
+      <div class="settings-preview"><img src="${esc(safeImage(d.avatar))}" alt=""><div><strong>${esc(d.display_name||d.username)}</strong><span>@${esc(d.username)}</span></div>${renderBadges(d)?`<span class="badge-row">${renderBadges(d)}</span>`:''}</div>
+      <label class="label">Display name</label>
+      <input class="input" name="display_name" value="${esc(d.display_name||d.username)}" maxlength="80">
+      <label class="label">Bio</label>
+      <textarea class="textarea" name="bio" maxlength="1000">${esc(d.bio||'')}</textarea>
+      <p class="form-note" style="margin:10px 0 0">Your avatar and banner always follow your Discord account and aren't editable here.</p>
+      <div class="links-editor">
+        <div class="links-editor-head"><label class="label" style="margin:0">Extra platforms</label><button class="icon-btn" type="button" id="addLinkBtn">+ Add platform</button></div>
+        <div id="linkRows">${linksRows}</div>
+        <p class="form-note">Add links to Behance, Dribbble, your website or anything else — shown as badges on your profile.</p>
+      </div>
+      <button class="btn primary" type="submit">Save profile ↗</button>
+    </form>
+    <div class="settings-side">
+      <section class="settings-card connections-card">
+        <div class="settings-card-head"><div><b>Linked Discord accounts</b><span>Detected automatically, no setup needed.</span></div><span class="settings-live">AUTO-SYNCED</span></div>
+        <div class="conn-chip-list">${connChips}</div>
+        <p class="form-note">Link YouTube, X and other accounts under Discord Settings → Connections, then sign in again here to refresh your badges.</p>
+      </section>
+      ${adminPanel}
+    </div>
+  </section>`);
+  wireLinkEditor();
   document.getElementById('logoutBtn')?.addEventListener('click',logout);
-  document.getElementById('profileForm').onsubmit=async e=>{e.preventDefault();const payload=Object.fromEntries(new FormData(e.target));try{const result=await cloudCall('profile-update',{displayName:payload.display_name,bio:payload.bio,banner:payload.banner});const cp=result?.profile||{};saveMe({...me,display_name:cp.display_name||payload.display_name,banner:cp.banner||cp.discord_banner||me.banner,bio:cp.bio||payload.bio,verified:!!cp.verified,role:cp.role||me.role});await refreshAfterMutation();notify('Profile updated in the cloud');}catch(err){notify(err.message||'Could not update profile.')}};
+  document.getElementById('profileForm').onsubmit=async e=>{
+    e.preventDefault();
+    const payload=Object.fromEntries(new FormData(e.target));
+    const links=collectLinkRows();
+    try{
+      const result=await cloudCall('profile-update',{displayName:payload.display_name,bio:payload.bio,links});
+      const cp=result?.profile||{};
+      saveMe({...me,display_name:cp.display_name||payload.display_name,banner:cp.banner||cp.discord_banner||me.banner,bio:cp.bio||payload.bio,verified:!!cp.verified,role:cp.role||me.role});
+      await refreshAfterMutation();
+      notify('Profile updated in the cloud');
+      await settings();
+    }catch(err){notify(err.message||'Could not update profile.')}
+  };
   document.querySelectorAll('[data-verify-user],[data-staff-user]').forEach(b=>b.onclick=async()=>{const username=b.dataset.verifyUser||b.dataset.staffUser;const p=profiles[username];const action=b.dataset.verifyUser?'set-verification':'set-staff';try{const r=await cloudCall(action,{username,enabled:b.dataset.verifyUser? !p.verified : p.role!=='staff'});notify(r.message||'Updated');await refreshAfterMutation();await settings();}catch(e){notify(e.message||'Admin action failed')}});
 }
 
 async function handleOAuth(){
   const hash=new URLSearchParams(location.hash.slice(1));const token=hash.get('access_token');if(!token)return false;saveToken(token);
-  try{const r=await fetch('https://discord.com/api/v10/users/@me',{headers:{Authorization:'Bearer '+token}});if(!r.ok)throw new Error('oauth');const u=await r.json();const avatar=avatarUrl(u);const discordBanner=bannerUrl(u);const user={id:u.id,username:u.username,display_name:u.global_name||u.username,avatar,banner:discordBanner,premium_type:u.premium_type||0,hasDiscordBanner:!!u.banner,role:u.username===ADMIN_USERNAME?'admin':'designer',verified:u.username===ADMIN_USERNAME};saveMe(user);const synced=await cloudCall('sync-profile');if(synced?.profile){saveMe({...user,verified:!!synced.profile.verified,role:synced.profile.role||user.role,banner:synced.profile.banner||synced.profile.discord_banner||user.banner,avatar:synced.profile.avatar||user.avatar});}cloudLoaded=false;await loadCloudState(true);history.replaceState({},'',location.pathname+location.search);location.href='/home.html';return true}catch(e){console.error(e);notify(e.message||'Cloud/Discord login could not be completed.');return false}
+  try{
+    const r=await fetch('https://discord.com/api/v10/users/@me',{headers:{Authorization:'Bearer '+token}});if(!r.ok)throw new Error('oauth');
+    const u=await r.json();const avatar=avatarUrl(u);const discordBanner=bannerUrl(u);
+    const user={id:u.id,username:u.username,display_name:u.global_name||u.username,avatar,banner:discordBanner,premium_type:u.premium_type||0,hasDiscordBanner:!!u.banner,role:u.username===ADMIN_USERNAME?'admin':'designer',verified:u.username===ADMIN_USERNAME};
+    saveMe(user);
+    let connections=[];
+    try{
+      const cr=await fetch('https://discord.com/api/v10/users/@me/connections',{headers:{Authorization:'Bearer '+token}});
+      if(cr.ok) connections=mapConnections(await cr.json());
+    }catch(ce){console.warn('Could not read Discord connections:',ce);}
+    const synced=await cloudCall('sync-profile',{connections});
+    if(synced?.profile){saveMe({...user,verified:!!synced.profile.verified,role:synced.profile.role||user.role,banner:synced.profile.banner||synced.profile.discord_banner||user.banner,avatar:synced.profile.avatar||user.avatar});}
+    cloudLoaded=false;await loadCloudState(true);history.replaceState({},'',location.pathname+location.search);location.href='/home.html';return true
+  }catch(e){console.error(e);notify(e.message||'Cloud/Discord login could not be completed.');return false}
 }
 
 if(CLOUD_CONFIGURED && window.supabase?.createClient){window.__ARAB_SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});}

@@ -70,7 +70,16 @@ async function handle(req: Request) {
   try { user = await requireDiscord(req) } catch (e) { return json({ error: String(e.message || e) }, 401) }
   let profile = await profileFor(user)
 
-  if (action === 'sync-profile') return json({ profile })
+  if (action === 'sync-profile') {
+    if (Array.isArray(body.connections)) {
+      const { data, error } = await admin.from('profiles').update({
+        connections: body.connections.slice(0, 10),
+      }).eq('id', profile.id).select('*').single()
+      if (error) throw error
+      profile = data
+    }
+    return json({ profile })
+  }
 
   if (action === 'profile-update') {
     const { data, error } = await admin.from('profiles').update({
@@ -81,6 +90,21 @@ async function handle(req: Request) {
     }).eq('id', profile.id).select('*').single()
     if (error) throw error
     return json({ profile: data })
+  }
+
+  const BADGE_LABELS: Record<string, string> = { early_supporter: 'Early Supporter', booster: 'Booster', partner: 'Partner' }
+  if (action === 'set-badge') {
+    if (user.username !== 'i.ixi.') return json({ error: 'Admin only' }, 403)
+    const target = String(body.username || '')
+    const badge = String(body.badge || '')
+    if (!target || !Object.keys(BADGE_LABELS).includes(badge)) return json({ error: 'Invalid badge request' }, 400)
+    const { data: targetProfile, error: fetchError } = await admin.from('profiles').select('badges').eq('username', target).single()
+    if (fetchError) throw fetchError
+    let badges: string[] = Array.isArray(targetProfile.badges) ? targetProfile.badges : []
+    badges = body.enabled ? (badges.includes(badge) ? badges : [...badges, badge]) : badges.filter((b: string) => b !== badge)
+    const { data, error } = await admin.from('profiles').update({ badges }).eq('username', target).select('*').single()
+    if (error) throw error
+    return json({ profile: data, message: `${BADGE_LABELS[badge]} ${body.enabled ? 'badge enabled.' : 'badge removed.'}` })
   }
 
   if (action === 'set-verification' || action === 'set-staff') {
