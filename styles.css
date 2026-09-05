@@ -106,7 +106,7 @@ body:before{background:radial-gradient(circle at 50% -20%,rgba(63,111,255,.16),t
 .connections-card .conn-chip-list{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 12px}
 .conn-chip{display:inline-flex;align-items:center;gap:7px;text-decoration:none;border:1px solid var(--line2);background:#0d0e12;padding:7px 11px 7px 8px;border-radius:999px;color:#e7e9ee;font-size:10.5px;transition:.2s}.conn-chip:hover{border-color:rgba(255,255,255,.22);transform:translateY(-1px)}.conn-chip b{display:grid;place-items:center;width:20px;height:20px;border-radius:7px;background:color-mix(in srgb, var(--pc) 25%, #0d0e12);color:var(--pc);font-size:9px;letter-spacing:-.3px}
 .social-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-.social-badge{display:inline-flex;align-items:center;gap:8px;text-decoration:none;border:1px solid var(--line2);background:#0d0e12;padding:8px 12px 8px 8px;border-radius:999px;color:#e7e9ee;font-size:10.5px;font-weight:650;transition:.2s}.social-badge:hover{border-color:var(--pc);color:#fff;transform:translateY(-2px)}.social-badge .sb-code{display:grid;place-items:center;width:22px;height:22px;border-radius:7px;background:color-mix(in srgb, var(--pc) 22%, #0d0e12);color:var(--pc);font-size:9.5px;font-weight:800;letter-spacing:-.3px}
+.social-badge{display:inline-flex;align-items:center;gap:8px;text-decoration:none;border:1px solid var(--line2);background:#0d0e12;padding:8px 12px 8px 8px;border-radius:999px;color:#e7e9ee;font-size:10.5px;font-weight:650;transition:.2s}.social-badge:hover{border-color:var(--pc);color:#fff;transform:translateY(-2px)}.social-badge .sb-code{display:grid;place-items:center;width:22px;height:22px;border-radius:7px;background:color-mix(in srgb, var(--pc) 22%, #0d0e12);color:var(--pc);font-size:9.5px;font-weight:800;letter-spacing:-.3px}.social-badge .sb-logo{width:16px;height:16px;display:block;object-fit:contain}
 @media(max-width:1050px){.settings-side{order:2}}
 @media(max-width:700px){.link-row{flex-wrap:wrap}.link-row .select{flex:1 1 100%}.link-row .link-url{flex:1 1 100%}.contact-sender{flex-wrap:wrap}}
 .badge-icon{width:14px;height:14px;object-fit:contain;vertical-align:middle;display:inline-block}
@@ -276,7 +276,7 @@ body:before{background:radial-gradient(circle at 50% -20%,rgba(63,111,255,.16),t
 /* v36 responsive polish */
 .social-badge{padding:6px;border-radius:11px;width:38px;height:38px;justify-content:center;gap:0}
 .social-badge .sb-code{width:24px;height:24px;border-radius:8px;font-size:0}
-.social-badge .sb-code svg{width:17px;height:17px;display:block}
+.social-badge .sb-code svg{width:17px;height:17px;display:block}.social-badge .sb-logo{width:17px;height:17px;display:block}
 .social-badge > span:last-child{display:none}
 
 /* Messenger: keep the people list visible on phones so incoming chats are discoverable. */

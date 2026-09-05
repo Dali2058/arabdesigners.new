@@ -100,9 +100,18 @@ const PLATFORM_META = {
 };
 const KNOWN_CONNECTION_TYPES = ['youtube','twitter','twitch','instagram','tiktok','github','spotify','reddit','steam','facebook'];
 const LINK_PLATFORM_OPTIONS = ['website','behance','dribbble','linkedin','youtube','twitter','instagram','tiktok','twitch','github','other'];
+const SOCIAL_LOGO_SLUGS = {
+  youtube:'youtube', twitter:'x', x:'x', twitch:'twitch', instagram:'instagram',
+  tiktok:'tiktok', github:'github', spotify:'spotify', reddit:'reddit', steam:'steam',
+  facebook:'facebook', behance:'behance', dribbble:'dribbble', linkedin:'linkedin',
+  discord:'discord', threads:'threads', telegram:'telegram', whatsapp:'whatsapp',
+  pinterest:'pinterest', medium:'medium', bluesky:'bluesky', mastodon:'mastodon',
+  codepen:'codepen', gitlab:'gitlab',
+};
 function socialIcon(type){
   const t=String(type||'').toLowerCase();
-  if(t==='youtube') return '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.8V8.2l6.5 3.8-6.5 3.8Z"/></svg>';
+  const slug=SOCIAL_LOGO_SLUGS[t];
+  if(slug) return `<img class="sb-logo" src="https://cdn.simpleicons.org/${slug}" alt="" aria-hidden="true" loading="lazy" referrerpolicy="no-referrer">`;
   return `<span class="sb-letter">${esc(platformMeta(t).code)}</span>`;
 }
 function platformMeta(type){ return PLATFORM_META[String(type||'').toLowerCase()] || PLATFORM_META.other; }
