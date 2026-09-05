@@ -159,7 +159,7 @@ function nav(){
       <span><strong>Arab Designers</strong><small>Creative network</small></span>
     </a>
     <nav class="navlinks">
-      <a href="/home">Home</a><a href="/designers">Designers</a><a href="/works">Works</a>${me?'<a class="publish-nav" href="/profile/'+encodeURIComponent(me.username)+'#works">+ Publish</a>':''}<a href="/about">About</a><a href="/contact">Contact</a>${isAdmin()?'<a class="admin-nav-link" href="/admin">Admin</a>':''}${mobileAuth}
+      <a href="/home">Home</a><a href="/designers">Designers</a><a href="/works">Works</a>${me?'<a class="publish-nav" href="/publish">+ Publish</a>':''}<a href="/about">About</a><a href="/contact">Contact</a>${isAdmin()?'<a class="admin-nav-link" href="/admin">Admin</a>':''}${mobileAuth}
     </nav>
     <div class="nav-right">
       <label class="search-wrap"><span>⌕</span><input id="globalSearch" placeholder="Search work or designers"></label>
@@ -211,6 +211,104 @@ async function home(){
 }
 
 
+async function publishPage(){
+  if(!me){ location.href='/login.html'; return; }
+  shell(`<section class="publish-studio">
+    <div class="publish-topbar">
+      <a class="publish-brand" href="/works" aria-label="Back to works"><span class="publish-back">‹</span><strong>Arab Designers</strong></a>
+      <div class="publish-actions"><button class="btn publish-draft" id="saveDraftBtn" type="button">Save as Draft</button><button class="btn primary publish-green" id="publishNowBtn" type="button">Publish</button></div>
+    </div>
+    <div class="publish-workspace">
+      <main class="publish-canvas">
+        <div class="publish-canvas-inner">
+          <div class="publish-placeholder" id="publishPreview">
+            <div class="publish-placeholder-icon">＋</div>
+            <h2>Start building your project</h2>
+            <p>Add an image to create the cover of your work.</p>
+            <button class="publish-big-action" id="chooseCoverBtn" type="button">▧ <span>Image</span></button>
+          </div>
+        </div>
+      </main>
+      <aside class="publish-sidebar">
+        <div class="publish-side-title">Add Content</div>
+        <div class="publish-tools">
+          <button type="button" data-publish-tool="image"><span>▧</span><b>Image</b></button>
+          <button type="button" data-publish-tool="text"><span>T</span><b>Text</b></button>
+          <button type="button" data-publish-tool="grid"><span>▦</span><b>Photo Grid</b></button>
+          <button type="button" data-publish-tool="video"><span>▶</span><b>Video / Audio</b></button>
+          <button type="button" data-publish-tool="embed"><span>&lt;/&gt;</span><b>Embed</b></button>
+          <button type="button" data-publish-tool="lightroom"><span>LR</span><b>Lightroom</b></button>
+          <button type="button" data-publish-tool="prototype"><span>⌁</span><b>Prototype</b></button>
+          <button type="button" data-publish-tool="3d"><span>◇</span><b>3D</b></button>
+        </div>
+        <div class="publish-side-title">Edit Project</div>
+        <div class="publish-edit-tools">
+          <button type="button" id="projectStylesBtn"><span>✦</span><b>Styles</b></button>
+          <button type="button" id="projectSettingsBtn"><span>⚙</span><b>Settings</b></button>
+        </div>
+        <div class="publish-custom-button"><button type="button">Custom Button</button><p>Customize the call to action on your project</p></div>
+        <div class="publish-assets"><div class="publish-side-title">Attach Assets</div><button type="button" id="attachAssetsBtn">⌕&nbsp; Attach Assets</button><p>Add files like fonts, illustrations, photos, zips, or templates as free or paid downloads.</p></div>
+      </aside>
+    </div>
+  </section>
+  <input id="publishFile" type="file" hidden accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime">
+  <div class="modal-overlay" id="publishDetailsModal"><div class="modal-card publish-details-card">
+    <div class="modal-head"><h3>Publish your work</h3><button class="icon-btn" id="closePublishDetails" type="button">✕</button></div>
+    <form id="publishDetailsForm">
+      <label class="label">Project title</label><input class="input" name="title" maxlength="120" placeholder="e.g. Brand Identity — Al Noor" required>
+      <label class="label">Description</label><textarea class="textarea" name="description" maxlength="400" placeholder="Tell people about this project…"></textarea>
+      <div class="publish-cover-mini" id="publishCoverMini"></div>
+      <p class="form-note">Your uploaded cover will appear on Works and your public profile.</p>
+      <button class="btn primary full" type="submit" id="confirmPublishBtn">Publish work ↗</button>
+    </form>
+  </div></div>`);
+
+  let coverFile=null, coverUpload=null;
+  const fileInput=document.getElementById('publishFile');
+  const preview=document.getElementById('publishPreview');
+  const mini=document.getElementById('publishCoverMini');
+  const choose=()=>fileInput.click();
+  document.getElementById('chooseCoverBtn')?.addEventListener('click',choose);
+  document.querySelectorAll('[data-publish-tool]').forEach(b=>b.addEventListener('click',()=>{
+    const tool=b.dataset.publishTool;
+    if(tool==='image'||tool==='grid'||tool==='video') choose();
+    else notify(tool==='text'?'Text blocks can be added after the cover is published.':`${b.querySelector('b')?.textContent||'This tool'} is ready for the next editor update.`);
+  }));
+  document.getElementById('attachAssetsBtn')?.addEventListener('click',()=>notify('Attach Assets is ready — upload support can be enabled from project settings.'));
+  document.getElementById('projectStylesBtn')?.addEventListener('click',()=>notify('Project styles will apply to the published project.'));
+  document.getElementById('projectSettingsBtn')?.addEventListener('click',()=>notify('Project settings are available before publishing.'));
+  document.getElementById('saveDraftBtn')?.addEventListener('click',()=>notify('Draft saved locally. Publish when you are ready.'));
+  fileInput.onchange=()=>{
+    const f=fileInput.files?.[0]; if(!f)return;
+    if(f.size>31457280){notify('File is larger than 30MB.');fileInput.value='';return;}
+    coverFile=f;
+    const url=URL.createObjectURL(f);
+    preview.innerHTML=f.type.startsWith('video/')?`<video src="${url}" controls playsinline></video>`:`<img src="${url}" alt="Project cover"><div class="publish-preview-overlay"><b>${esc(f.name)}</b><span>Cover preview</span></div>`;
+    mini.innerHTML=f.type.startsWith('video/')?`<video src="${url}" controls></video>`:`<img src="${url}" alt="">`;
+  };
+  const openDetails=()=>{ if(!coverFile){notify('Choose an image or video first.');return;} document.getElementById('publishDetailsModal').classList.add('open'); };
+  document.getElementById('publishNowBtn')?.addEventListener('click',openDetails);
+  document.getElementById('closePublishDetails')?.addEventListener('click',()=>document.getElementById('publishDetailsModal')?.classList.remove('open'));
+  document.getElementById('publishDetailsModal')?.addEventListener('click',e=>{if(e.target.id==='publishDetailsModal')e.target.classList.remove('open')});
+  document.getElementById('publishDetailsForm').onsubmit=async e=>{
+    e.preventDefault();
+    const fd=new FormData(e.target), btn=document.getElementById('confirmPublishBtn');
+    btn.disabled=true;btn.textContent='Publishing…';
+    try{
+      const ext=(coverFile.name.split('.').pop()||'bin').toLowerCase();
+      const type=coverFile.type.startsWith('video/')?'video':'image';
+      const workId=uid();
+      const up=await cloudCall('work-upload-url',{workId,ext});
+      const {error}=await window.__ARAB_SB.storage.from('works').uploadToSignedUrl(up.path,up.token,coverFile);
+      if(error)throw error;
+      const pub=window.__ARAB_SB.storage.from('works').getPublicUrl(up.path).data.publicUrl;
+      const r=await cloudCall('create-work',{workId,mediaType:type,mediaUrl:pub,mediaLabel:type==='video'?'Video':'Image',storagePath:up.path,title:fd.get('title'),description:fd.get('description')});
+      notify('Work published successfully.');
+      location.href=`/profile/${encodeURIComponent(me.username)}#works`;
+    }catch(err){notify(err.message||'Could not publish work.');btn.disabled=false;btn.textContent='Publish work ↗';}
+  };
+}
+
 function worksPage(){
   const all=[];
   Object.entries(cloudState.works||{}).forEach(([pid,list])=>{
@@ -218,7 +316,7 @@ function worksPage(){
     (list||[]).forEach(w=>all.push({...w,designer:p||{username:'designer',display_name:'Designer',avatar:FALLBACK_LOGO}}));
   });
   all.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
-  shell(`<section class="works-page-head"><div><div class="section-label">THE WORKS</div><h1>Work worth<br><span>being seen.</span></h1><p>Explore the latest projects published by designers across Arab Designers.</p></div>${me?`<a class="btn primary xl" href="/profile/${encodeURIComponent(me.username)}#works">+ Publish work</a>`:''}</section>
+  shell(`<section class="works-page-head"><div><div class="section-label">THE WORKS</div><h1>Work worth<br><span>being seen.</span></h1><p>Explore the latest projects published by designers across Arab Designers.</p></div>${me?`<a class="btn primary xl" href="/publish">+ Publish work</a>`:''}</section>
   <section class="section"><div class="works-grid works-feed" id="worksGrid">${all.length?all.map(w=>`<div class="work-feed-item"><div class="work-feed-author"><img src="${esc(safeImage(w.designer.avatar))}" alt=""><div><a href="/profile/${encodeURIComponent(w.designer.username)}">${esc(w.designer.display_name||w.designer.username)}</a><span>@${esc(w.designer.username)}</span></div></div>${workCard(w,false)}</div>`).join(''):`<div class="empty-state wide"><span>✦</span><h3>No published work yet</h3><p>Designers can publish their first project from their profile.</p></div>`}</div></section>`);
   document.querySelectorAll('[data-open-work]').forEach(b=>b.onclick=()=>openWorkViewer(b.dataset.openWork));
   document.querySelectorAll('[data-like-work]').forEach(b=>b.onclick=async(e)=>{
@@ -250,9 +348,10 @@ async function initMessenger(initialDesigner=''){
     try{
       const r=await cloudCall('chat-history',{username}); const p=r.profile||{username,display_name:username,avatar:FALLBACK_LOGO}; active=username;
       pane().innerHTML=`<div class="chat-top"><img src="${esc(safeImage(p.avatar))}"><div><b>${esc(p.display_name||p.username)}</b><span>@${esc(p.username)}</span></div><a class="btn" href="/profile/${encodeURIComponent(p.username)}">Profile ↗</a></div><div class="chat-messages" id="chatMessages"></div><form class="chat-compose" id="chatCompose"><input type="file" id="chatFile" hidden accept="image/*,video/*,audio/*,.pdf,.zip"><button type="button" class="chat-attach" id="chatAttach" title="Attach file">＋</button><button type="button" class="chat-record" id="chatRecord" title="Record voice">●</button><textarea id="chatText" rows="1" maxlength="3000" placeholder="Write a message…"></textarea><button class="btn primary" type="submit">Send</button></form>`;
-      const render=msgs=>{const box=document.getElementById('chatMessages');box.innerHTML=msgs.length?msgs.map(m=>`<div class="chat-msg ${m.sender_id===me.id?'mine':''}">${m.attachment_url?`<a class="chat-attachment" href="${esc(m.attachment_url)}" target="_blank">${m.attachment_type?.startsWith('audio/')?'🎙 Voice message':m.attachment_type?.startsWith('image/')?`<img src="${esc(m.attachment_url)}" alt="attachment">`:'📎 '+esc(m.attachment_name||'Attachment')}</a>`:''}${m.content?`<div class="bubble">${esc(m.content)}</div>`:''}<time>${timeAgo(new Date(m.created_at).getTime())}</time></div>`).join(''):'<div class="chat-no-messages">No messages yet. Say hello 👋</div>';box.scrollTop=box.scrollHeight;};
+      const render=msgs=>{const box=document.getElementById('chatMessages');box.innerHTML=msgs.length?msgs.map(m=>`<div class="chat-msg ${m.sender_id===me.id?'mine':''}">${m.attachment_url?`<div class="chat-attachment">${m.attachment_type?.startsWith('audio/')?`<audio src="${esc(m.attachment_url)}" controls></audio>`:m.attachment_type?.startsWith('video/')?`<video src="${esc(m.attachment_url)}" controls playsinline></video>`:m.attachment_type?.startsWith('image/')?`<a href="${esc(m.attachment_url)}" target="_blank"><img src="${esc(m.attachment_url)}" alt="attachment"></a>`:`<a href="${esc(m.attachment_url)}" target="_blank">📎 ${esc(m.attachment_name||'Attachment')}</a>`}</div>`:''}${m.content?`<div class="bubble">${esc(m.content)}</div>`:''}<time>${timeAgo(new Date(m.created_at).getTime())}</time></div>`).join(''):'<div class="chat-no-messages">No messages yet. Say hello 👋</div>';box.scrollTop=box.scrollHeight;};
       const load=async()=>{try{const rr=await cloudCall('chat-history',{username});render(rr.messages||[])}catch{}};
       await load(); await loadConversations();
+      document.getElementById('chatText').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();document.getElementById('chatCompose')?.requestSubmit()}});
       document.getElementById('chatCompose').onsubmit=async e=>{e.preventDefault();const text=document.getElementById('chatText').value.trim();if(!text)return;const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;try{await cloudCall('chat-send',{username,content:text});document.getElementById('chatText').value='';await load();await loadConversations()}catch(err){notify(err.message||'Could not send message.')}finally{btn.disabled=false}};
       document.getElementById('chatAttach').onclick=()=>document.getElementById('chatFile').click();
       document.getElementById('chatFile').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const ext=(f.name.split('.').pop()||'bin').toLowerCase();const up=await cloudCall('chat-upload-url',{username,ext,mime:f.type,name:f.name});const {error}=await window.__ARAB_SB.storage.from('chat').uploadToSignedUrl(up.path,up.token,f);if(error)throw error;const pub=window.__ARAB_SB.storage.from('chat').getPublicUrl(up.path).data.publicUrl;await cloudCall('chat-send',{username,attachmentUrl:pub,attachmentType:f.type,attachmentName:f.name});await load();await loadConversations()}catch(err){notify(err.message||'Upload failed.')}e.target.value=''};
@@ -775,6 +874,7 @@ async function route(){
   if(p==='/about'||p==='/about.html')return about();
   if(p==='/designers'||p==='/designers.html')return await designers();
   if(p==='/works'||p==='/works.html') { await loadCloudState(); return worksPage(); }
+  if(p==='/publish'||p==='/publish.html') return await publishPage();
   if(p==='/messages'||p==='/messages.html') return await messagesPage();
   if(p==='/contact'||p==='/contact.html')return contact();
   if(p==='/settings'||p==='/settings.html')return await settings();

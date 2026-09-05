@@ -29,3 +29,7 @@ Redeploy the `arab-designers-api` Edge Function (`supabase/functions/arab-design
 after applying `migration_works_uploads.sql` — it adds the new actions the upload/comment UI calls
 (`work-upload-url`, `create-work`, `update-work`, `delete-work`, `reorder-works`, `add-comment`,
 `delete-comment`, `liked-works`, `view-profile`).
+
+
+### Publish studio
+`/publish` now provides a Behance-style project publishing workspace with cover upload, project details, and publish flow.
