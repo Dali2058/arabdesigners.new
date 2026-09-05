@@ -672,7 +672,7 @@ function setMeta(name, content, property=false){
 function setProfileMeta(d, username){
   const title='Arab Designers - Profile';
   const desc='Arab Designers - designer profile, selected work and creative portfolio.';
-  const shareImage='https://i.postimg.cc/TY4WQrHN/fffac.png';
+  const shareImage='/profiles.png';
   document.title=title;
   setMeta('description',desc);
   setMeta('og:title',title,true);
