@@ -219,94 +219,70 @@ async function publishPage(){
       <div class="publish-actions"><button class="btn publish-draft" id="saveDraftBtn" type="button">Save as Draft</button><button class="btn primary publish-green" id="publishNowBtn" type="button">Publish</button></div>
     </div>
     <div class="publish-workspace">
-      <main class="publish-canvas">
-        <div class="publish-canvas-inner">
-          <div class="publish-placeholder" id="publishPreview">
-            <div class="publish-placeholder-icon">＋</div>
-            <h2>Start building your project</h2>
-            <p>Add an image to create the cover of your work.</p>
-            <button class="publish-big-action" id="chooseCoverBtn" type="button">▧ <span>Image</span></button>
-          </div>
-        </div>
-      </main>
+      <main class="publish-canvas"><div class="publish-canvas-inner" id="publishCanvas"><div class="publish-placeholder" id="publishPreview"><div class="publish-placeholder-icon">＋</div><h2>Start building your project</h2><p>Choose a main cover image, then add as many images and blocks as you want.</p><button class="publish-big-action" id="chooseCoverBtn" type="button">▧ <span>Main cover image</span></button><small class="publish-size-note">Required cover: 1600 × 900 px · 16:9</small></div></div></main>
       <aside class="publish-sidebar">
         <div class="publish-side-title">Add Content</div>
         <div class="publish-tools">
-          <button type="button" data-publish-tool="image"><span>▧</span><b>Image</b></button>
-          <button type="button" data-publish-tool="text"><span>T</span><b>Text</b></button>
-          <button type="button" data-publish-tool="grid"><span>▦</span><b>Photo Grid</b></button>
-          <button type="button" data-publish-tool="video"><span>▶</span><b>Video / Audio</b></button>
-          <button type="button" data-publish-tool="embed"><span>&lt;/&gt;</span><b>Embed</b></button>
-          <button type="button" data-publish-tool="lightroom"><span>LR</span><b>Lightroom</b></button>
-          <button type="button" data-publish-tool="prototype"><span>⌁</span><b>Prototype</b></button>
-          <button type="button" data-publish-tool="3d"><span>◇</span><b>3D</b></button>
+          <button type="button" data-publish-tool="image"><span>▧</span><b>Image</b></button><button type="button" data-publish-tool="text"><span>T</span><b>Text</b></button>
+          <button type="button" data-publish-tool="grid"><span>▦</span><b>Photo Grid</b></button><button type="button" data-publish-tool="video"><span>▶</span><b>Video / Audio</b></button>
+          <button type="button" data-publish-tool="embed"><span>&lt;/&gt;</span><b>Embed</b></button><button type="button" data-publish-tool="lightroom"><span>LR</span><b>Lightroom</b></button>
+          <button type="button" data-publish-tool="prototype"><span>⌁</span><b>Prototype</b></button><button type="button" data-publish-tool="3d"><span>◇</span><b>3D</b></button>
         </div>
-        <div class="publish-side-title">Edit Project</div>
-        <div class="publish-edit-tools">
-          <button type="button" id="projectStylesBtn"><span>✦</span><b>Styles</b></button>
-          <button type="button" id="projectSettingsBtn"><span>⚙</span><b>Settings</b></button>
-        </div>
-        <div class="publish-custom-button"><button type="button">Custom Button</button><p>Customize the call to action on your project</p></div>
-        <div class="publish-assets"><div class="publish-side-title">Attach Assets</div><button type="button" id="attachAssetsBtn">⌕&nbsp; Attach Assets</button><p>Add files like fonts, illustrations, photos, zips, or templates as free or paid downloads.</p></div>
+        <div class="publish-side-title">Edit Project</div><div class="publish-edit-tools"><button type="button" id="projectStylesBtn"><span>✦</span><b>Styles</b></button><button type="button" id="projectSettingsBtn"><span>⚙</span><b>Settings</b></button></div>
+        <div class="publish-custom-button"><button type="button" id="customButtonBtn">Custom Button</button><p>Add a CTA button to the published project.</p></div>
+        <div class="publish-assets"><div class="publish-side-title">Attach Assets</div><button type="button" id="attachAssetsBtn">⌕&nbsp; Attach Assets</button><p>Add fonts, source files, ZIPs or other downloadable assets.</p><div id="assetList" class="publish-asset-list"></div></div>
+        <div class="publish-block-list" id="publishBlockList"></div>
       </aside>
     </div>
   </section>
-  <input id="publishFile" type="file" hidden accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime">
-  <div class="modal-overlay" id="publishDetailsModal"><div class="modal-card publish-details-card">
-    <div class="modal-head"><h3>Publish your work</h3><button class="icon-btn" id="closePublishDetails" type="button">✕</button></div>
-    <form id="publishDetailsForm">
-      <label class="label">Project title</label><input class="input" name="title" maxlength="120" placeholder="e.g. Brand Identity — Al Noor" required>
-      <label class="label">Description</label><textarea class="textarea" name="description" maxlength="400" placeholder="Tell people about this project…"></textarea>
-      <div class="publish-cover-mini" id="publishCoverMini"></div>
-      <p class="form-note">Your uploaded cover will appear on Works and your public profile.</p>
-      <button class="btn primary full" type="submit" id="confirmPublishBtn">Publish work ↗</button>
-    </form>
-  </div></div>`);
+  <input id="publishCoverFile" type="file" hidden accept="image/png,image/jpeg,image/webp,image/gif">
+  <input id="publishImageFiles" type="file" hidden multiple accept="image/png,image/jpeg,image/webp,image/gif">
+  <input id="publishVideoFile" type="file" hidden accept="video/mp4,video/webm,video/quicktime,audio/mpeg,audio/wav,audio/ogg,audio/mp4">
+  <input id="publishAssetFiles" type="file" hidden multiple>
+  <div class="modal-overlay" id="cropModal"><div class="modal-card crop-card"><div class="modal-head"><h3>Crop image</h3><button class="icon-btn" id="closeCrop" type="button">✕</button></div><p class="form-note">All project images are normalized to <strong>1600 × 900</strong>. Drag to position and use the slider to zoom.</p><div class="crop-stage"><canvas id="cropCanvas" width="800" height="450"></canvas></div><div class="crop-controls"><span>−</span><input id="cropZoom" type="range" min="1" max="3" step="0.01" value="1"><span>＋</span></div><div class="crop-actions"><button class="btn" id="cropCancel" type="button">Cancel</button><button class="btn primary" id="cropApply" type="button">Apply</button></div></div></div>
+  <div class="modal-overlay" id="publishDetailsModal"><div class="modal-card publish-details-card"><div class="modal-head"><h3>Publish your work</h3><button class="icon-btn" id="closePublishDetails" type="button">✕</button></div><form id="publishDetailsForm"><label class="label">Project title</label><input class="input" name="title" maxlength="120" placeholder="e.g. Brand Identity — Al Noor" required><label class="label">Description</label><textarea class="textarea" name="description" maxlength="400" placeholder="Tell people about this project…"></textarea><div class="publish-cover-mini" id="publishCoverMini"></div><div class="publish-publish-summary" id="publishSummary"></div><p class="form-note">The main cover is what appears on Works. The other images and blocks appear inside the project.</p><button class="btn primary full" type="submit" id="confirmPublishBtn">Publish work ↗</button></form></div></div>
+  <div class="modal-overlay" id="toolModal"><div class="modal-card"><div class="modal-head"><h3 id="toolModalTitle">Add content</h3><button class="icon-btn" id="closeToolModal" type="button">✕</button></div><div id="toolModalBody"></div></div></div>`);
 
-  let coverFile=null, coverUpload=null;
-  const fileInput=document.getElementById('publishFile');
-  const preview=document.getElementById('publishPreview');
-  const mini=document.getElementById('publishCoverMini');
-  const choose=()=>fileInput.click();
-  document.getElementById('chooseCoverBtn')?.addEventListener('click',choose);
-  document.querySelectorAll('[data-publish-tool]').forEach(b=>b.addEventListener('click',()=>{
-    const tool=b.dataset.publishTool;
-    if(tool==='image'||tool==='grid'||tool==='video') choose();
-    else notify(tool==='text'?'Text blocks can be added after the cover is published.':`${b.querySelector('b')?.textContent||'This tool'} is ready for the next editor update.`);
-  }));
-  document.getElementById('attachAssetsBtn')?.addEventListener('click',()=>notify('Attach Assets is ready — upload support can be enabled from project settings.'));
-  document.getElementById('projectStylesBtn')?.addEventListener('click',()=>notify('Project styles will apply to the published project.'));
-  document.getElementById('projectSettingsBtn')?.addEventListener('click',()=>notify('Project settings are available before publishing.'));
-  document.getElementById('saveDraftBtn')?.addEventListener('click',()=>notify('Draft saved locally. Publish when you are ready.'));
-  fileInput.onchange=()=>{
-    const f=fileInput.files?.[0]; if(!f)return;
-    if(f.size>31457280){notify('File is larger than 30MB.');fileInput.value='';return;}
-    coverFile=f;
-    const url=URL.createObjectURL(f);
-    preview.innerHTML=f.type.startsWith('video/')?`<video src="${url}" controls playsinline></video>`:`<img src="${url}" alt="Project cover"><div class="publish-preview-overlay"><b>${esc(f.name)}</b><span>Cover preview</span></div>`;
-    mini.innerHTML=f.type.startsWith('video/')?`<video src="${url}" controls></video>`:`<img src="${url}" alt="">`;
-  };
-  const openDetails=()=>{ if(!coverFile){notify('Choose an image or video first.');return;} document.getElementById('publishDetailsModal').classList.add('open'); };
-  document.getElementById('publishNowBtn')?.addEventListener('click',openDetails);
-  document.getElementById('closePublishDetails')?.addEventListener('click',()=>document.getElementById('publishDetailsModal')?.classList.remove('open'));
-  document.getElementById('publishDetailsModal')?.addEventListener('click',e=>{if(e.target.id==='publishDetailsModal')e.target.classList.remove('open')});
-  document.getElementById('publishDetailsForm').onsubmit=async e=>{
-    e.preventDefault();
-    const fd=new FormData(e.target), btn=document.getElementById('confirmPublishBtn');
-    btn.disabled=true;btn.textContent='Publishing…';
-    try{
-      const ext=(coverFile.name.split('.').pop()||'bin').toLowerCase();
-      const type=coverFile.type.startsWith('video/')?'video':'image';
-      const workId=uid();
-      const up=await cloudCall('work-upload-url',{workId,ext});
-      const {error}=await window.__ARAB_SB.storage.from('works').uploadToSignedUrl(up.path,up.token,coverFile);
-      if(error)throw error;
-      const pub=window.__ARAB_SB.storage.from('works').getPublicUrl(up.path).data.publicUrl;
-      const r=await cloudCall('create-work',{workId,mediaType:type,mediaUrl:pub,mediaLabel:type==='video'?'Video':'Image',storagePath:up.path,title:fd.get('title'),description:fd.get('description')});
-      notify('Work published successfully.');
-      location.href=`/profile/${encodeURIComponent(me.username)}#works`;
-    }catch(err){notify(err.message||'Could not publish work.');btn.disabled=false;btn.textContent='Publish work ↗';}
-  };
+  const TARGET_W=1600,TARGET_H=900; let coverFile=null, stagedBlocks=[], stagedAssets=[]; let cropQueue=[], cropResolve=null, cropImg=null, cropScale=1, cropX=0, cropY=0, drag=null;
+  const canvas=document.getElementById('cropCanvas'), ctx=canvas.getContext('2d'), zoom=document.getElementById('cropZoom');
+  const preview=document.getElementById('publishPreview'), mini=document.getElementById('publishCoverMini'), blockList=document.getElementById('publishBlockList');
+  const objectUrl=f=>URL.createObjectURL(f);
+  function redrawCrop(){ if(!cropImg)return; const cw=canvas.width,ch=canvas.height; ctx.clearRect(0,0,cw,ch); const base=Math.max(cw/cropImg.width,ch/cropImg.height); const scale=base*cropScale; const w=cropImg.width*scale,h=cropImg.height*scale; const x=(cw-w)/2+cropX,y=(ch-h)/2+cropY; ctx.drawImage(cropImg,x,y,w,h); ctx.strokeStyle='rgba(255,255,255,.95)';ctx.lineWidth=2;ctx.strokeRect(1,1,cw-2,ch-2); }
+  function openCrop(file){ return new Promise((resolve,reject)=>{ cropResolve={resolve,reject}; cropImg=new Image(); cropImg.onload=()=>{ cropScale=1;zoom.value='1';cropX=0;cropY=0;document.getElementById('cropModal').classList.add('open');redrawCrop(); }; cropImg.onerror=()=>reject(new Error('Could not read image')); cropImg.src=objectUrl(file); }); }
+  function cropBlob(){ const out=document.createElement('canvas');out.width=TARGET_W;out.height=TARGET_H;const c=out.getContext('2d');const base=Math.max(TARGET_W/cropImg.width,TARGET_H/cropImg.height),scale=base*cropScale;const w=cropImg.width*scale,h=cropImg.height*scale;const sx=(TARGET_W-w)/2+cropX*(TARGET_W/canvas.width),sy=(TARGET_H-h)/2+cropY*(TARGET_H/canvas.height);c.drawImage(cropImg,sx,sy,w,h);return new Promise(r=>out.toBlob(b=>r(b),'image/jpeg',.92)); }
+  async function runCrop(file){ return openCrop(file); }
+  document.getElementById('cropApply').onclick=async()=>{try{const blob=await cropBlob();const file=new File([blob],(cropImg.src.split('/').pop()||'image')+'.jpg',{type:'image/jpeg'});document.getElementById('cropModal').classList.remove('open');cropResolve?.resolve(file);}catch(e){cropResolve?.reject(e)}};
+  const cancelCrop=()=>{document.getElementById('cropModal').classList.remove('open');cropResolve?.resolve(null)};document.getElementById('cropCancel').onclick=cancelCrop;document.getElementById('closeCrop').onclick=cancelCrop;
+  zoom.oninput=()=>{cropScale=Number(zoom.value);redrawCrop()};
+  canvas.onpointerdown=e=>{drag={x:e.clientX,y:e.clientY,px:cropX,py:cropY};canvas.setPointerCapture(e.pointerId)};canvas.onpointermove=e=>{if(!drag)return;const base=Math.max(canvas.width/cropImg.width,canvas.height/cropImg.height),scale=base*cropScale,w=cropImg.width*scale,h=cropImg.height*scale;const maxX=Math.max(0,(w-canvas.width)/2),maxY=Math.max(0,(h-canvas.height)/2);cropX=Math.max(-maxX,Math.min(maxX,drag.px+(e.clientX-drag.x)));cropY=Math.max(-maxY,Math.min(maxY,drag.py+(e.clientY-drag.y)));redrawCrop()};canvas.onpointerup=()=>drag=null;canvas.onpointercancel=()=>drag=null;
+  function renderStaged(){
+    const coverHtml=coverFile?`<div class="publish-cover-preview"><img src="${objectUrl(coverFile)}" alt="Main cover"><div class="publish-cover-label"><b>Main cover · 1600 × 900</b><button type="button" id="recropCover">Crop again</button></div></div>`:'';
+    const blocksHtml=stagedBlocks.map((b,i)=>{if(b.kind==='image')return `<div class="publish-editor-block"><img src="${objectUrl(b.file)}" alt=""><span>Image · 1600 × 900</span></div>`;if(b.kind==='text')return `<div class="publish-editor-text">${esc(b.content).replace(/\n/g,'<br>')}</div>`;if(b.kind==='video')return `<div class="publish-editor-block"><video src="${objectUrl(b.file)}" controls></video><span>Video / Audio</span></div>`;if(b.kind==='audio')return `<div class="publish-editor-audio"><b>Audio</b><audio src="${objectUrl(b.file)}" controls></audio></div>`;return `<div class="publish-editor-embed"><b>${esc(b.label)}</b><a href="${esc(b.url)}" target="_blank" rel="noopener">${esc(b.url)}</a></div>`}).join('');
+    preview.innerHTML=(coverHtml||blocksHtml)?`${coverHtml}${blocksHtml}`:`<div class="publish-placeholder-icon">＋</div><h2>Start building your project</h2><p>Choose a main cover image, then add as many images and blocks as you want.</p><button class="publish-big-action" id="chooseCoverBtn2" type="button">▧ <span>Main cover image</span></button><small class="publish-size-note">Required cover: 1600 × 900 px · 16:9</small>`;
+    document.getElementById('chooseCoverBtn2')?.addEventListener('click',()=>document.getElementById('publishCoverFile').click());
+    document.getElementById('recropCover')?.addEventListener('click',async()=>{const f=await runCrop(coverFile);if(f){coverFile=f;renderStaged();}});
+    mini.innerHTML=coverFile?`<img src="${objectUrl(coverFile)}" alt="">`:'';
+    blockList.innerHTML=stagedBlocks.map((b,i)=>`<div class="publish-block-row"><span class="publish-block-index">${i+1}</span><span class="publish-block-type">${esc(b.label)}</span><span class="publish-block-name">${esc(b.name||b.content||b.url||'')}</span><button type="button" class="icon-btn danger" data-remove-block="${i}">✕</button></div>`).join('');
+    blockList.querySelectorAll('[data-remove-block]').forEach(b=>b.onclick=()=>{stagedBlocks.splice(Number(b.dataset.removeBlock),1);renderStaged();});
+    document.getElementById('publishSummary').textContent=`${stagedBlocks.length} content block${stagedBlocks.length===1?'':'s'} ready · ${stagedAssets.length} attached asset${stagedAssets.length===1?'':'s'}`;
+    document.getElementById('assetList').innerHTML=stagedAssets.map((f,i)=>`<div class="publish-asset-row"><span>📎</span><span>${esc(f.name)}</span><button type="button" class="icon-btn danger" data-remove-asset="${i}">✕</button></div>`).join('');document.querySelectorAll('[data-remove-asset]').forEach(b=>b.onclick=()=>{stagedAssets.splice(Number(b.dataset.removeAsset),1);renderStaged()});
+  }
+  async function addImages(files){ for(const file of files){if(file.size>31457280){notify(`${file.name} is larger than 30MB.`);continue;} const cropped=await runCrop(file);if(cropped)stagedBlocks.push({kind:'image',label:'Image',name:file.name,file:cropped});}renderStaged(); }
+  async function addCover(file){if(!file)return;if(file.size>31457280){notify('Cover is larger than 30MB.');return;}const cropped=await runCrop(file);if(cropped){coverFile=cropped;renderStaged();}}
+  document.getElementById('chooseCoverBtn').onclick=()=>document.getElementById('publishCoverFile').click();document.getElementById('publishCoverFile').onchange=e=>{addCover(e.target.files?.[0]);e.target.value=''};
+  document.getElementById('publishImageFiles').onchange=e=>{addImages([...e.target.files||[]]);e.target.value=''};
+  document.getElementById('publishVideoFile').onchange=e=>{const f=e.target.files?.[0];if(f)stagedBlocks.push({kind:f.type.startsWith('audio/')?'audio':'video',label:f.type.startsWith('audio/')?'Audio':'Video / Audio',name:f.name,file:f});renderStaged();e.target.value=''};
+  document.getElementById('publishAssetFiles').onchange=e=>{stagedAssets.push(...[...e.target.files||[]].filter(f=>f.size<=50*1024*1024));renderStaged();e.target.value=''};
+  document.querySelectorAll('[data-publish-tool]').forEach(b=>b.onclick=()=>{const t=b.dataset.publishTool;if(t==='image'||t==='grid'){document.getElementById('publishImageFiles').click();return}if(t==='video'){document.getElementById('publishVideoFile').click();return}const modal=document.getElementById('toolModal'),body=document.getElementById('toolModalBody'),title=document.getElementById('toolModalTitle');title.textContent=`Add ${b.querySelector('b').textContent}`;modal.classList.add('open');if(t==='text'){body.innerHTML=`<label class="label">Text block</label><textarea class="textarea" id="toolText" rows="6" placeholder="Write your project story…"></textarea><button class="btn primary full" id="toolAdd">Add text</button>`;document.getElementById('toolAdd').onclick=()=>{const v=document.getElementById('toolText').value.trim();if(v){stagedBlocks.push({kind:'text',label:'Text',content:v});renderStaged();modal.classList.remove('open')}}}else{body.innerHTML=`<label class="label">${esc(b.querySelector('b').textContent)} URL</label><input class="input" id="toolUrl" placeholder="https://…"><p class="form-note">Paste a public HTTPS link. It will be shown inside your project.</p><button class="btn primary full" id="toolAdd">Add block</button>`;document.getElementById('toolAdd').onclick=()=>{const v=document.getElementById('toolUrl').value.trim();if(!/^https:\/\//i.test(v)){notify('Please use an HTTPS URL.');return}stagedBlocks.push({kind:'embed',label:b.querySelector('b').textContent,url:v});renderStaged();modal.classList.remove('open')}}});
+  document.getElementById('closeToolModal').onclick=()=>document.getElementById('toolModal').classList.remove('open');document.getElementById('toolModal').onclick=e=>{if(e.target.id==='toolModal')e.target.classList.remove('open')};
+  document.getElementById('attachAssetsBtn').onclick=()=>document.getElementById('publishAssetFiles').click();
+  document.getElementById('projectStylesBtn').onclick=()=>{document.getElementById('toolModalTitle').textContent='Project styles';document.getElementById('toolModalBody').innerHTML=`<label class="label">Project background</label><input class="input" type="color" id="projectBg" value="#ffffff"><label class="label">Content width</label><select class="input" id="projectWidth"><option value="1080">1080 px</option><option value="1200">1200 px</option><option value="1400">1400 px</option></select><button class="btn primary full" id="saveStyle">Apply styles</button>`;document.getElementById('toolModal').classList.add('open');document.getElementById('saveStyle').onclick=()=>{document.getElementById('publishCanvas').style.background=document.getElementById('projectBg').value;document.getElementById('publishCanvas').style.maxWidth=document.getElementById('projectWidth').value+'px';document.getElementById('toolModal').classList.remove('open')}};
+  document.getElementById('projectSettingsBtn').onclick=()=>{document.getElementById('toolModalTitle').textContent='Project settings';document.getElementById('toolModalBody').innerHTML=`<label class="label">Project status</label><select class="input" id="projectStatus"><option>Public</option><option>Unlisted</option></select><label class="label">Comments</label><select class="input"><option>Enabled</option><option>Disabled</option></select><button class="btn primary full" id="saveSettings">Save settings</button>`;document.getElementById('toolModal').classList.add('open');document.getElementById('saveSettings').onclick=()=>{notify('Project settings saved for this project.');document.getElementById('toolModal').classList.remove('open')}};
+  document.getElementById('customButtonBtn').onclick=()=>{document.getElementById('toolModalTitle').textContent='Custom Button';document.getElementById('toolModalBody').innerHTML=`<label class="label">Button text</label><input class="input" id="cbText" value="View project"><label class="label">Link</label><input class="input" id="cbUrl" placeholder="https://…"><button class="btn primary full" id="saveCb">Add button</button>`;document.getElementById('toolModal').classList.add('open');document.getElementById('saveCb').onclick=()=>{const text=document.getElementById('cbText').value.trim()||'View project',url=document.getElementById('cbUrl').value.trim();if(!/^https:\/\//i.test(url)){notify('Please use an HTTPS URL.');return}stagedBlocks.push({kind:'embed',label:'Custom Button',content:text,url});renderStaged();document.getElementById('toolModal').classList.remove('open')}};
+  document.getElementById('saveDraftBtn').onclick=()=>{localStorage.setItem('ARAB_DRAFT_WORK',JSON.stringify({title:'',description:'',blocks:stagedBlocks.map(b=>({kind:b.kind,label:b.label,name:b.name,content:b.content,url:b.url}))}));notify('Draft saved locally.');};
+  const openDetails=()=>{if(!coverFile){notify('Choose a main cover image first.');return}document.getElementById('publishDetailsModal').classList.add('open');renderStaged()};document.getElementById('publishNowBtn').onclick=openDetails;document.getElementById('closePublishDetails').onclick=()=>document.getElementById('publishDetailsModal').classList.remove('open');document.getElementById('publishDetailsModal').onclick=e=>{if(e.target.id==='publishDetailsModal')e.target.classList.remove('open')};
+  async function uploadFileForWork(workId,file,mediaId){const ext=(file.name.split('.').pop()||'jpg').toLowerCase();const up=await cloudCall('work-upload-url',{workId,mediaId,ext});const {error}=await window.__ARAB_SB.storage.from('works').uploadToSignedUrl(up.path,up.token,file);if(error)throw error;return {path:up.path,url:window.__ARAB_SB.storage.from('works').getPublicUrl(up.path).data.publicUrl};}
+  document.getElementById('publishDetailsForm').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target),btn=document.getElementById('confirmPublishBtn');btn.disabled=true;btn.textContent='Publishing…';try{const workId=uid();const cover=await uploadFileForWork(workId,coverFile,'cover');const r=await cloudCall('create-work',{workId,mediaType:'image',mediaUrl:cover.url,mediaLabel:'Image',storagePath:cover.path,title:fd.get('title'),description:fd.get('description')});for(let i=0;i<stagedBlocks.length;i++){const b=stagedBlocks[i];if(b.file){const up=await uploadFileForWork(workId,b.file,`block-${i}`);await cloudCall('create-work-block',{workId,blockType:b.kind==='audio'?'audio':(b.kind==='video'?'video':'image'),mediaUrl:up.url,storagePath:up.path,caption:b.label});}else if(b.kind==='text'){await cloudCall('create-work-block',{workId,blockType:'text',content:b.content,caption:b.label});}else if(b.url){await cloudCall('create-work-block',{workId,blockType:'embed',mediaUrl:b.url,content:b.content||'',caption:b.label});}}notify('Work published successfully.');location.href=`/profile/${encodeURIComponent(me.username)}#works`;}catch(err){notify(err.message||'Could not publish work.');btn.disabled=false;btn.textContent='Publish work ↗'}};
 }
 
 function worksPage(){
@@ -336,34 +312,116 @@ async function messagesPage(){
   await initMessenger(new URLSearchParams(location.search).get('designer')||'');
 }
 async function initMessenger(initialDesigner=''){
-  let active='', timer=null, conversations=[];
+  let active='', timer=null, conversations=[], loadingChat=false;
   const listEl=()=>document.getElementById('conversationList'), pane=()=>document.getElementById('chatPane');
+  const getMessagesBox=()=>document.getElementById('chatMessages');
+
   async function loadConversations(){
-    try{const r=await cloudCall('chat-list'); conversations=r.conversations||[]; listEl().innerHTML=conversations.length?conversations.map(c=>`<button class="conversation ${active===c.username?'active':''}" data-chat-user="${esc(c.username)}"><img src="${esc(safeImage(c.avatar))}"><span><b>${esc(c.display_name||c.username)}</b><small>@${esc(c.username)}</small></span>${c.unread?`<i class="unread-dot">${c.unread>9?'9+':c.unread}</i>`:''}</button>`).join(''):'<div class="conversation-empty">No conversations yet.<br>Open a designer profile and press Contact.</div>'; listEl().querySelectorAll('[data-chat-user]').forEach(b=>b.onclick=()=>openChat(b.dataset.chatUser));}
-    catch(e){listEl().innerHTML=`<div class="conversation-empty">${esc(e.message||'Could not load conversations.')}</div>`}
+    try{
+      const r=await cloudCall('chat-list'); conversations=r.conversations||[];
+      const list=listEl(); if(!list)return;
+      list.innerHTML=conversations.length?conversations.map(c=>`<button class="conversation ${active===c.username?'active':''}" data-chat-user="${esc(c.username)}"><img src="${esc(safeImage(c.avatar))}"><span><b>${esc(c.display_name||c.username)}</b><small>${esc(c.last?.content||c.last?.attachment_name||'New message')}</small></span>${c.unread?`<i class="unread-dot">${c.unread>9?'9+':c.unread}</i>`:''}</button>`).join(''):'<div class="conversation-empty">No conversations yet.<br>Open a designer profile and press Contact.</div>';
+      list.querySelectorAll('[data-chat-user]').forEach(b=>b.onclick=()=>openChat(b.dataset.chatUser));
+    }catch(e){const list=listEl();if(list)list.innerHTML=`<div class="conversation-empty">${esc(e.message||'Could not load conversations.')}</div>`}
   }
+
+  function messageHtml(m){
+    const mine=m.sender_id===me.id;
+    const attachment=m.attachment_url?`<div class="chat-attachment">${m.attachment_type?.startsWith('audio/')?`<audio src="${esc(m.attachment_url)}" controls></audio>`:m.attachment_type?.startsWith('video/')?`<video src="${esc(m.attachment_url)}" controls playsinline></video>`:m.attachment_type?.startsWith('image/')?`<a href="${esc(m.attachment_url)}" target="_blank"><img src="${esc(m.attachment_url)}" alt="attachment"></a>`:`<a href="${esc(m.attachment_url)}" target="_blank">📎 ${esc(m.attachment_name||'Attachment')}</a>`}</div>`:'';
+    return `<div class="chat-msg ${mine?'mine':''}" data-message-id="${esc(m.id)}">${attachment}${m.content?`<div class="bubble">${esc(m.content)}</div>`:''}<div class="chat-msg-meta"><time>${timeAgo(new Date(m.created_at).getTime())}</time>${mine?`<button type="button" class="chat-delete" data-delete-message="${esc(m.id)}" title="Delete message">Delete</button>`:''}</div></div>`;
+  }
+
+  function renderMessages(msgs, keepScroll=false){
+    const box=getMessagesBox(); if(!box)return;
+    const wasNearBottom=box.scrollHeight-box.scrollTop-box.clientHeight<90;
+    const previous=box.querySelectorAll('.chat-msg').length;
+    box.innerHTML=msgs.length?msgs.map(messageHtml).join(''):'<div class="chat-no-messages">No messages yet. Say hello 👋</div>';
+    box.querySelectorAll('[data-delete-message]').forEach(btn=>btn.onclick=async()=>{
+      if(!confirm('Delete this message?'))return;
+      btn.disabled=true;
+      try{await cloudCall('chat-delete',{messageId:btn.dataset.deleteMessage});btn.closest('.chat-msg')?.remove();notify('Message deleted.');await loadConversations();refreshMessageBadge();}
+      catch(e){btn.disabled=false;notify(e.message||'Could not delete message.');}
+    });
+    if(!keepScroll || wasNearBottom || msgs.length>previous) box.scrollTop=box.scrollHeight;
+  }
+
+  async function refreshActiveChat(){
+    if(!active || loadingChat)return;
+    try{
+      const r=await cloudCall('chat-history',{username:active});
+      if(active) renderMessages(r.messages||[], true);
+      await loadConversations();
+      refreshMessageBadge();
+    }catch(e){}
+  }
+
   async function openChat(username){
-    active=username; await loadConversations();
+    if(!username)return;
+    active=username; loadingChat=true; await loadConversations();
     pane().innerHTML='<div class="chat-loading">Loading messages…</div>';
     try{
-      const r=await cloudCall('chat-history',{username}); const p=r.profile||{username,display_name:username,avatar:FALLBACK_LOGO}; active=username;
-      pane().innerHTML=`<div class="chat-top"><img src="${esc(safeImage(p.avatar))}"><div><b>${esc(p.display_name||p.username)}</b><span>@${esc(p.username)}</span></div><a class="btn" href="/profile/${encodeURIComponent(p.username)}">Profile ↗</a></div><div class="chat-messages" id="chatMessages"></div><form class="chat-compose" id="chatCompose"><input type="file" id="chatFile" hidden accept="image/*,video/*,audio/*,.pdf,.zip"><button type="button" class="chat-attach" id="chatAttach" title="Attach file">＋</button><button type="button" class="chat-record" id="chatRecord" title="Record voice">●</button><textarea id="chatText" rows="1" maxlength="3000" placeholder="Write a message…"></textarea><button class="btn primary" type="submit">Send</button></form>`;
-      const render=msgs=>{const box=document.getElementById('chatMessages');box.innerHTML=msgs.length?msgs.map(m=>`<div class="chat-msg ${m.sender_id===me.id?'mine':''}">${m.attachment_url?`<div class="chat-attachment">${m.attachment_type?.startsWith('audio/')?`<audio src="${esc(m.attachment_url)}" controls></audio>`:m.attachment_type?.startsWith('video/')?`<video src="${esc(m.attachment_url)}" controls playsinline></video>`:m.attachment_type?.startsWith('image/')?`<a href="${esc(m.attachment_url)}" target="_blank"><img src="${esc(m.attachment_url)}" alt="attachment"></a>`:`<a href="${esc(m.attachment_url)}" target="_blank">📎 ${esc(m.attachment_name||'Attachment')}</a>`}</div>`:''}${m.content?`<div class="bubble">${esc(m.content)}</div>`:''}<time>${timeAgo(new Date(m.created_at).getTime())}</time></div>`).join(''):'<div class="chat-no-messages">No messages yet. Say hello 👋</div>';box.scrollTop=box.scrollHeight;};
-      const load=async()=>{try{const rr=await cloudCall('chat-history',{username});render(rr.messages||[])}catch{}};
-      await load(); await loadConversations();
-      document.getElementById('chatText').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();document.getElementById('chatCompose')?.requestSubmit()}});
-      document.getElementById('chatCompose').onsubmit=async e=>{e.preventDefault();const text=document.getElementById('chatText').value.trim();if(!text)return;const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;try{await cloudCall('chat-send',{username,content:text});document.getElementById('chatText').value='';await load();await loadConversations()}catch(err){notify(err.message||'Could not send message.')}finally{btn.disabled=false}};
+      const r=await cloudCall('chat-history',{username});
+      const p=r.profile||{username,display_name:username,avatar:FALLBACK_LOGO};
+      pane().innerHTML=`<div class="chat-top"><img src="${esc(safeImage(p.avatar))}"><div><b>${esc(p.display_name||p.username)}</b><span>@${esc(p.username)}</span></div><a class="btn" href="/profile/${encodeURIComponent(p.username)}">Profile ↗</a></div><div class="chat-messages" id="chatMessages"></div><form class="chat-compose" id="chatCompose"><input type="file" id="chatFile" hidden accept="image/*,video/*,audio/*,.pdf,.zip,.rar,.doc,.docx"><button type="button" class="chat-attach" id="chatAttach" title="Attach file">＋</button><button type="button" class="chat-record" id="chatRecord" title="Record voice">●</button><textarea id="chatText" rows="1" maxlength="3000" placeholder="Write a message…"></textarea><button class="btn primary" type="submit">Send</button></form>`;
+      renderMessages(r.messages||[]);
+      const text=document.getElementById('chatText');
+      text?.focus();
+      text?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();document.getElementById('chatCompose')?.requestSubmit()}});
+      document.getElementById('chatCompose').onsubmit=async e=>{
+        e.preventDefault(); const value=text.value.trim(); if(!value)return;
+        const btn=e.target.querySelector('button[type=submit]'); btn.disabled=true;
+        try{await cloudCall('chat-send',{username,content:value});text.value='';await refreshActiveChat();text.focus();}
+        catch(err){notify(err.message||'Could not send message.');}
+        finally{btn.disabled=false;}
+      };
       document.getElementById('chatAttach').onclick=()=>document.getElementById('chatFile').click();
-      document.getElementById('chatFile').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const ext=(f.name.split('.').pop()||'bin').toLowerCase();const up=await cloudCall('chat-upload-url',{username,ext,mime:f.type,name:f.name});const {error}=await window.__ARAB_SB.storage.from('chat').uploadToSignedUrl(up.path,up.token,f);if(error)throw error;const pub=window.__ARAB_SB.storage.from('chat').getPublicUrl(up.path).data.publicUrl;await cloudCall('chat-send',{username,attachmentUrl:pub,attachmentType:f.type,attachmentName:f.name});await load();await loadConversations()}catch(err){notify(err.message||'Upload failed.')}e.target.value=''};
+      document.getElementById('chatFile').onchange=async e=>{
+        const f=e.target.files?.[0];if(!f)return;
+        try{
+          const ext=(f.name.split('.').pop()||'bin').toLowerCase();
+          const up=await cloudCall('chat-upload-url',{username,ext,mime:f.type,name:f.name});
+          const {error}=await window.__ARAB_SB.storage.from('chat').uploadToSignedUrl(up.path,up.token,f); if(error)throw error;
+          const pub=window.__ARAB_SB.storage.from('chat').getPublicUrl(up.path).data.publicUrl;
+          await cloudCall('chat-send',{username,attachmentUrl:pub,attachmentType:f.type,attachmentName:f.name});
+          await refreshActiveChat(); text?.focus();
+        }catch(err){notify(err.message||'Upload failed.')} finally{e.target.value=''}
+      };
       let recording=false,rec=null,chunks=[];
-      document.getElementById('chatRecord').onclick=async()=>{const b=document.getElementById('chatRecord');if(!recording){try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});rec=new MediaRecorder(stream);chunks=[];rec.ondataavailable=e=>chunks.push(e.data);rec.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());const blob=new Blob(chunks,{type:rec.mimeType||'audio/webm'});try{const up=await cloudCall('chat-upload-url',{username,ext:'webm',mime:blob.type,name:'voice-message.webm'});const {error}=await window.__ARAB_SB.storage.from('chat').uploadToSignedUrl(up.path,up.token,blob);if(error)throw error;const pub=window.__ARAB_SB.storage.from('chat').getPublicUrl(up.path).data.publicUrl;await cloudCall('chat-send',{username,attachmentUrl:pub,attachmentType:blob.type,attachmentName:'Voice message'}) ;await load();await loadConversations()}catch(err){notify(err.message||'Voice message failed.')}};rec.start();recording=true;b.classList.add('recording');b.textContent='■';notify('Recording… click again to send')}catch(err){notify('Microphone permission is required.')}}else{recording=false;b.classList.remove('recording');b.textContent='●';rec?.stop()}};
+      document.getElementById('chatRecord').onclick=async()=>{
+        const b=document.getElementById('chatRecord');
+        if(!recording){
+          try{
+            const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+            rec=new MediaRecorder(stream);chunks=[];
+            rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+            rec.onstop=async()=>{
+              stream.getTracks().forEach(t=>t.stop());
+              const blob=new Blob(chunks,{type:rec.mimeType||'audio/webm'});
+              try{
+                const up=await cloudCall('chat-upload-url',{username,ext:'webm',mime:blob.type,name:'voice-message.webm'});
+                const {error}=await window.__ARAB_SB.storage.from('chat').uploadToSignedUrl(up.path,up.token,blob);if(error)throw error;
+                const pub=window.__ARAB_SB.storage.from('chat').getPublicUrl(up.path).data.publicUrl;
+                await cloudCall('chat-send',{username,attachmentUrl:pub,attachmentType:blob.type,attachmentName:'Voice message'});await refreshActiveChat();text?.focus();
+              }catch(err){notify(err.message||'Voice message failed.')}
+            };
+            rec.start();recording=true;b.classList.add('recording');b.textContent='■';notify('Recording… click again to send');
+          }catch(err){notify('Microphone permission is required.')}
+        }else{recording=false;b.classList.remove('recording');b.textContent='●';rec?.stop()}
+      };
+      refreshMessageBadge();
     }catch(e){pane().innerHTML=`<div class="chat-empty">${esc(e.message||'Could not open conversation.')}</div>`}
+    finally{loadingChat=false;}
   }
+
   await loadConversations();
   if(initialDesigner) await openChat(initialDesigner);
-  clearInterval(timer); timer=setInterval(()=>{if(active)openChat(active);else loadConversations()},5000);
+  clearInterval(timer);
+  timer=setInterval(async()=>{
+    await loadConversations();
+    if(active) await refreshActiveChat();
+    else refreshMessageBadge();
+  },5000);
 }
-
 function about(){
   shell(`<section class="about-hero about-hero-v2"><div><div class="section-label">ABOUT · EYAD MOHAMED</div><h1>Design with<br><span>direction.</span></h1><p>Graphic designer, UI/UX specialist and creative director building visual identities, digital experiences and systems that feel deliberate.</p><div class="about-actions"><a class="btn primary" href="/contact">Work together ↗</a><a class="text-link" href="/designers">Meet the designers →</a></div><div class="about-signature"><span>2018—2026</span><span>Visual identity</span><span>UI/UX</span><span>Creative direction</span></div></div><div class="about-portrait about-portrait-v2"><img src="${EYAD}" alt="Eyad Mohamed"><div class="portrait-overlay"></div><div class="portrait-tag">EYAD MOHAMED<br><small>ARAB DESIGNERS · FOUNDER</small></div></div></section>
   <section class="section story-grid about-story-v2"><div class="section-label">THE APPROACH</div><div><h2>Clear thinking.<br><span>Strong visuals.</span></h2><p>بدأت رحلتي في التصميم عام 2018، ومن وقتها وأنا أشتغل بين الهوية البصرية، المحتوى الرقمي، الواجهات والتجارب المختلفة. اشتغلت مع استوديوهات وفرق إبداعية متعددة، وركزت في كل تجربة على تحويل الفكرة إلى نظام بصري واضح وقابل للاستخدام.</p><p>Today the focus is simple: composition, typography, contrast, motion and digital interaction — all working together instead of competing for attention.</p><div class="about-facts"><div><strong>01</strong><span>Visual identity systems</span></div><div><strong>02</strong><span>Digital & UI/UX experiences</span></div><div><strong>03</strong><span>Creative direction</span></div></div></div></section>
@@ -557,6 +615,10 @@ async function openWorkViewer(workId){
   const modal=document.getElementById('workViewer'); if(!modal)return;
   document.getElementById('workViewerTitle').textContent=w.title||'Untitled project';
   document.getElementById('workViewerMedia').innerHTML=renderWorkMedia(w);
+  let blocksWrap=document.getElementById('workViewerBlocks');
+  if(!blocksWrap){ blocksWrap=document.createElement('div'); blocksWrap.id='workViewerBlocks'; document.getElementById('workViewerMedia').after(blocksWrap); }
+  blocksWrap.innerHTML='<p class=\"form-note\">Loading project…</p>';
+  cloudCall('list-work-blocks',{workId:w.id}).then(r=>{blocksWrap.innerHTML=(r.blocks||[]).map(b=>{if(b.block_type==='text')return `<div class=\"work-block-text\">${esc(b.content).replace(/\n/g,'<br>')}</div>`;if(b.block_type==='image')return `<figure class=\"work-block-image\"><img src=\"${esc(b.media_url)}\" alt=\"\"><figcaption>${esc(b.caption||'')}</figcaption></figure>`;if(b.block_type==='video')return `<div class=\"work-block-video\"><video src=\"${esc(b.media_url)}\" controls playsinline></video></div>`;if(b.block_type==='audio')return `<div class=\"work-block-embed\"><div class=\"form-note\">Audio</div><audio src=\"${esc(b.media_url)}\" controls style=\"width:100%\"></audio></div>`;return `<div class=\"work-block-embed\"><div class=\"form-note\">${esc(b.caption||'Embed')}</div><a class=\"btn\" href=\"${esc(b.media_url)}\" target=\"_blank\" rel=\"noopener\">Open content ↗</a></div>`}).join('')}).catch(()=>{blocksWrap.innerHTML='' });
   document.getElementById('workViewerDesc').textContent=w.description||'';
   document.getElementById('workViewerDesc').style.display=w.description?'':'none';
   document.getElementById('workViewerViews').textContent=`👁 ${formatNumber(w.views)} views`;

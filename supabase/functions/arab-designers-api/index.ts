@@ -12,7 +12,7 @@ const SECRET_KEYS = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') || '{}')
 const SERVICE_KEY = SECRET_KEYS.default || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const DISCORD_API = 'https://discord.com/api/v10'
 const ADMIN_USERNAME = 'i.ixi.'
-const ALLOWED_FILE_EXT = ['png','jpg','jpeg','webp','gif','mp4','webm','mov']
+const ALLOWED_FILE_EXT = ['png','jpg','jpeg','webp','gif','mp4','webm','mov','mp3','wav','ogg','m4a']
 
 const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false }
@@ -144,6 +144,27 @@ async function handle(req: Request) {
     return json({message:data})
   }
 
+  if (action === 'chat-delete') {
+    const messageId = String(body.messageId || '')
+    if (!messageId) return json({ error: 'Message ID is required' }, 400)
+    const { data: msg, error: me } = await admin.from('messages').select('id,sender_id,attachment_url').eq('id', messageId).single()
+    if (me || !msg) return json({ error: 'Message not found' }, 404)
+    if (msg.sender_id !== user.id) return json({ error: 'You can only delete your own messages' }, 403)
+    if (msg.attachment_url) {
+      try {
+        const marker = '/storage/v1/object/public/chat/'
+        const idx = String(msg.attachment_url).indexOf(marker)
+        if (idx >= 0) {
+          const path = String(msg.attachment_url).slice(idx + marker.length).split('?')[0]
+          if (path) await admin.storage.from('chat').remove([path])
+        }
+      } catch (_) {}
+    }
+    const { error } = await admin.from('messages').delete().eq('id', messageId).eq('sender_id', user.id)
+    if (error) throw error
+    return json({ ok: true })
+  }
+
   if (action === 'chat-upload-url') {
     const target = await chatTarget(String(body.username||''))
     if(target.discord_id===user.id) return json({error:'Invalid recipient'},400)
@@ -231,7 +252,8 @@ async function handle(req: Request) {
     const ext = String(body.ext || '').toLowerCase().replace(/[^a-z0-9]/g, '')
     if (!ALLOWED_FILE_EXT.includes(ext)) return json({ error: 'Unsupported file type' }, 400)
     const workId = String(body.workId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80) || crypto.randomUUID()
-    const path = `${profile.id}/${workId}.${ext}`
+    const mediaId = String(body.mediaId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80) || 'cover'
+    const path = `${profile.id}/${workId}/${mediaId}.${ext}`
     const { data, error } = await admin.storage.from('works').createSignedUploadUrl(path)
     if (error) return json({ error: error.message }, 400)
     return json({ path, token: data.token, workId })
@@ -268,6 +290,45 @@ async function handle(req: Request) {
     return json({ work: data })
   }
 
+  if (action === 'create-work-block') {
+    const workId = String(body.workId || '')
+    const { data: w, error: fe } = await admin.from('works').select('profile_id').eq('id', workId).single()
+    if (fe || !w) return json({ error: 'Work not found' }, 404)
+    if (w.profile_id !== profile.id && user.username !== ADMIN_USERNAME) return json({ error: 'Not allowed' }, 403)
+    const type = String(body.blockType || '')
+    if (!['image','video','audio','embed','text'].includes(type)) return json({ error: 'Invalid block type' }, 400)
+    const { data: maxRow } = await admin.from('work_blocks').select('position').eq('work_id', workId)
+      .order('position', { ascending: false }).limit(1).maybeSingle()
+    const position = (maxRow?.position ?? -1) + 1
+    const { data, error } = await admin.from('work_blocks').insert({
+      id: crypto.randomUUID(), work_id: workId, block_type: type,
+      media_url: String(body.mediaUrl || ''), storage_path: String(body.storagePath || ''),
+      content: String(body.content || '').slice(0, 10000), caption: String(body.caption || '').slice(0, 300), position
+    }).select('*').single()
+    if (error) throw error
+    return json({ block: data })
+  }
+
+  if (action === 'list-work-blocks') {
+    const workId = String(body.workId || '')
+    const { data, error } = await admin.from('work_blocks').select('*').eq('work_id', workId).order('position', { ascending: true })
+    if (error) throw error
+    return json({ blocks: data || [] })
+  }
+
+  if (action === 'delete-work-block') {
+    const blockId = String(body.blockId || '')
+    const { data: b, error: fe } = await admin.from('work_blocks').select('id,work_id,storage_path').eq('id', blockId).single()
+    if (fe || !b) return json({ error: 'Block not found' }, 404)
+    const { data: w, error: we } = await admin.from('works').select('profile_id').eq('id', b.work_id).single()
+    if (we || !w) return json({ error: 'Work not found' }, 404)
+    if (w.profile_id !== profile.id && user.username !== ADMIN_USERNAME) return json({ error: 'Not allowed' }, 403)
+    if (b.storage_path) await admin.storage.from('works').remove([b.storage_path])
+    const { error } = await admin.from('work_blocks').delete().eq('id', blockId)
+    if (error) throw error
+    return json({ ok: true })
+  }
+
   if (action === 'update-work') {
     const workId = String(body.workId || '')
     const { data: w, error: fe } = await admin.from('works').select('profile_id').eq('id', workId).single()
@@ -287,6 +348,11 @@ async function handle(req: Request) {
     if (fe || !w) return json({ error: 'Work not found' }, 404)
     if (w.profile_id !== profile.id && user.username !== ADMIN_USERNAME) return json({ error: 'Not allowed' }, 403)
     if (w.storage_path) { await admin.storage.from('works').remove([w.storage_path]).catch(() => {}) }
+    const { data: blocks } = await admin.from('work_blocks').select('storage_path').eq('work_id', workId)
+    const blockPaths = (blocks || []).map((b: any) => b.storage_path).filter(Boolean)
+    if (blockPaths.length) await admin.storage.from('works').remove(blockPaths).catch(() => {})
+    const { error: blockError } = await admin.from('work_blocks').delete().eq('work_id', workId)
+    if (blockError) throw blockError
     const { error } = await admin.from('works').delete().eq('id', workId)
     if (error) throw error
     return json({ ok: true })
