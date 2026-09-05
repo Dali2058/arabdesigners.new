@@ -164,7 +164,7 @@ function collectLinkRows(){
   })).filter(l=>l.url).slice(0,10);
 }
 
-function profileShareUrl(username){ return `/?profile=${encodeURIComponent(String(username||'').trim())}`; }
+function profileShareUrl(username){ return `/profile/?profile=${encodeURIComponent(String(username||'').trim())}`; }
 
 function nav(){
   const profile = me ? profileShareUrl(me.username) : '/login';
@@ -282,14 +282,14 @@ async function publishPage(){
   function blockPreviewHtml(b){
     const gap=Number(b.gap||0);
     const style=gap?` style="margin-top:${gap}px"`:'';
-    if(b.kind==='image') return `<div class="publish-editor-block ${b.layout==='half'?'publish-layout-half':''}" data-preview-block="${esc(b.id||'')}"><img src="${objectUrl(b.file)}" alt=""><span>${b.layout==='half'?'Half width · ':''}Image · 1600 × 900</span></div>`;
+    if(b.kind==='image') return `<div class="publish-editor-block ${b.layout==='half'?'publish-layout-half':''}" data-preview-block="${esc(b.id||'')}"><img src="${objectUrl(b.file)}" alt=""><span>${b.layout==='half'?'Half width · ':''}Image · Original size</span></div>`;
     if(b.kind==='text') return `<div class="publish-editor-text" style="margin-top:${gap}px">${esc(b.content).replace(/\n/g,'<br>')}</div>`;
     if(b.kind==='video') return `<div class="publish-editor-block" style="margin-top:${gap}px"><video src="${objectUrl(b.file)}" controls></video><span>Video / Audio</span></div>`;
     if(b.kind==='audio') return `<div class="publish-editor-audio" style="margin-top:${gap}px"><b>Audio</b><audio src="${objectUrl(b.file)}" controls></audio></div>`;
     return `<div class="publish-editor-embed" style="margin-top:${gap}px"><b>${esc(b.label)}</b><a href="${esc(b.url)}" target="_blank" rel="noopener">${esc(b.url)}</a></div>`;
   }
   function renderStaged(){
-    const coverHtml=coverFile?`<div class="publish-cover-preview"><img src="${objectUrl(coverFile)}" alt="Main cover"><div class="publish-cover-label"><b>Main cover · 1600 × 900</b><button type="button" id="recropCover">Crop again</button></div></div>`:'';
+    const coverHtml=coverFile?`<div class="publish-cover-preview"><img src="${objectUrl(coverFile)}" alt="Main cover"><div class="publish-cover-label"><b>Main cover · Original size</b><button type="button" id="recropCover">Crop again</button></div></div>`:'';
     let blocksHtml='';
     for(let i=0;i<stagedBlocks.length;i++){
       const b=stagedBlocks[i];
@@ -331,8 +331,8 @@ async function publishPage(){
     document.getElementById('assetList').innerHTML=stagedAssets.map((f,i)=>`<div class="publish-asset-row"><span>📎</span><span>${esc(f.name)}</span><button type="button" class="icon-btn danger" data-remove-asset="${i}">✕</button></div>`).join('');
     document.querySelectorAll('[data-remove-asset]').forEach(b=>b.onclick=()=>{stagedAssets.splice(Number(b.dataset.removeAsset),1);renderStaged()});
   }
-  async function addImages(files){ for(const file of files){if(file.size>31457280){notify(`${file.name} is larger than 30MB.`);continue;} const cropped=await runCrop(file);if(cropped)stagedBlocks.push({kind:'image',label:'Image',name:file.name,file:cropped,layout:'full',gap:16});}renderStaged(); }
-  async function addCover(file){if(!file)return;if(file.size>31457280){notify('Cover is larger than 30MB.');return;}const cropped=await runCrop(file);if(cropped){coverFile=cropped;renderStaged();}}
+  async function addImages(files){ for(const file of files){if(file.size>31457280){notify(`${file.name} is larger than 30MB.`);continue;} stagedBlocks.push({kind:'image',label:'Image',name:file.name,file,layout:'full',gap:16});}renderStaged(); }
+  async function addCover(file){if(!file)return;if(file.size>31457280){notify('Cover is larger than 30MB.');return;}coverFile=file;renderStaged();}
   document.getElementById('chooseCoverBtn').onclick=()=>document.getElementById('publishCoverFile').click();document.getElementById('publishCoverFile').onchange=e=>{addCover(e.target.files?.[0]);e.target.value=''};
   document.getElementById('publishImageFiles').onchange=e=>{addImages([...e.target.files||[]]);e.target.value=''};
   document.getElementById('publishVideoFile').onchange=e=>{const f=e.target.files?.[0];if(f)stagedBlocks.push({kind:f.type.startsWith('audio/')?'audio':'video',label:f.type.startsWith('audio/')?'Audio':'Video / Audio',name:f.name,file:f,gap:16});renderStaged();e.target.value=''};
@@ -351,7 +351,7 @@ async function publishPage(){
   document.getElementById('closePublishDetails').onclick=()=>document.getElementById('publishDetailsModal').classList.remove('open');
   document.getElementById('publishDetailsModal').onclick=e=>{if(e.target.id==='publishDetailsModal')e.target.classList.remove('open')};
   async function uploadFileForWork(workId,file,mediaId){const ext=(file.name.split('.').pop()||'jpg').toLowerCase();const up=await cloudCall('work-upload-url',{workId,mediaId,ext});const {error}=await window.__ARAB_SB.storage.from('works').uploadToSignedUrl(up.path,up.token,file);if(error)throw error;return {path:up.path,url:window.__ARAB_SB.storage.from('works').getPublicUrl(up.path).data.publicUrl};}
-  document.getElementById('publishDetailsForm').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target),btn=document.getElementById('confirmPublishBtn');if(!coverFile){notify('Please choose a project cover first.');document.getElementById('choosePublishCoverBtn')?.focus();return}const title=String(fd.get('title')||'').trim();if(!title){notify('Please enter a project title.');return}if(!String(fd.get('category')||'')){notify('Please choose a category.');categoryInput.focus();return}btn.disabled=true;btn.textContent='Publishing…';try{const workId=uid();const cover=await uploadFileForWork(workId,coverFile,'cover');const r=await cloudCall('create-work',{workId,mediaType:'image',mediaUrl:cover.url,mediaLabel:'Image',storagePath:cover.path,title:fd.get('title'),description:fd.get('description'),category:fd.get('category'),tags:publishTags,tools:fd.get('tools')});for(let i=0;i<stagedBlocks.length;i++){const b=stagedBlocks[i];if(b.file){const up=await uploadFileForWork(workId,b.file,`block-${i}`);await cloudCall('create-work-block',{workId,blockType:b.kind==='audio'?'audio':(b.kind==='video'?'video':'image'),mediaUrl:up.url,storagePath:up.path,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}else if(b.kind==='text'){await cloudCall('create-work-block',{workId,blockType:'text',content:b.content,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}else if(b.url){await cloudCall('create-work-block',{workId,blockType:'embed',mediaUrl:b.url,content:b.content||'',caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}}notify('Work published successfully.');location.href=profileShareUrl(me.username)+'#works';}catch(err){notify(err.message||'Could not publish work.');btn.disabled=false;btn.textContent='Publish work ↗'}};
+  document.getElementById('publishDetailsForm').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target),btn=document.getElementById('confirmPublishBtn');if(!coverFile){notify('Please choose a project cover first.');document.getElementById('choosePublishCoverBtn')?.focus();return}const title=String(fd.get('title')||'').trim();if(!title){notify('Please enter a project title.');return}if(!String(fd.get('category')||'')){notify('Please choose a category.');categoryInput.focus();return}btn.disabled=true;btn.textContent='Preparing images…';try{const croppedCover=await runCrop(coverFile);if(!croppedCover)throw new Error('Cover crop was cancelled.');const croppedBlocks=[];for(let i=0;i<stagedBlocks.length;i++){const b=stagedBlocks[i];if(b.kind==='image'&&b.file){btn.textContent=`Preparing image ${i+1}/${stagedBlocks.length}…`;const cropped=await runCrop(b.file);if(!cropped)throw new Error('Image crop was cancelled.');croppedBlocks.push({index:i,file:cropped});}}btn.textContent='Publishing…';const workId=uid();const cover=await uploadFileForWork(workId,croppedCover,'cover');const r=await cloudCall('create-work',{workId,mediaType:'image',mediaUrl:cover.url,mediaLabel:'Image',storagePath:cover.path,title:fd.get('title'),description:fd.get('description'),category:fd.get('category'),tags:publishTags,tools:fd.get('tools')});let croppedMap=new Map(croppedBlocks.map(x=>[x.index,x.file]));for(let i=0;i<stagedBlocks.length;i++){const b=stagedBlocks[i];if(b.file){const file=croppedMap.get(i)||b.file;const up=await uploadFileForWork(workId,file,`block-${i}`);await cloudCall('create-work-block',{workId,blockType:b.kind==='audio'?'audio':(b.kind==='video'?'video':'image'),mediaUrl:up.url,storagePath:up.path,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}else if(b.kind==='text'){await cloudCall('create-work-block',{workId,blockType:'text',content:b.content,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}else if(b.url){await cloudCall('create-work-block',{workId,blockType:'embed',mediaUrl:b.url,content:b.content||'',caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}}notify('Work published successfully.');location.href=profileShareUrl(me.username)+'#works';}catch(err){notify(err.message||'Could not publish work.');btn.disabled=false;btn.textContent='Publish work ↗'}};
 }
 
 function worksPage(){
@@ -363,6 +363,7 @@ function worksPage(){
   all.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
   shell(`<section class="works-page-head"><div><div class="section-label">THE WORKS</div><h1>Work worth<br><span>being seen.</span></h1><p>Explore the latest projects published by designers across Arab Designers.</p></div>${me?`<a class="btn primary xl" href="/publish">+ Publish work</a>`:''}</section>
   <section class="section"><div class="works-grid works-feed" id="worksGrid">${all.length?all.map(w=>`<div class="work-feed-item"><div class="work-feed-author"><img src="${esc(safeImage(w.designer.avatar))}" alt=""><div><a href="${profileShareUrl(w.designer.username)}">${esc(w.designer.display_name||w.designer.username)}</a><span>@${esc(w.designer.username)}</span></div></div>${workCard(w,false)}</div>`).join(''):`<div class="empty-state wide"><span>✦</span><h3>No published work yet</h3><p>Designers can publish their first project from their profile.</p></div>`}</div></section>`);
+  app.insertAdjacentHTML('beforeend',modalsMarkup(false));
   document.querySelectorAll('[data-open-work]').forEach(b=>b.onclick=()=>openWorkViewer(b.dataset.openWork));
   document.querySelectorAll('[data-like-work]').forEach(b=>b.onclick=async(e)=>{
     e.stopPropagation(); const w=findWork(b.dataset.likeWork); if(!w)return;
@@ -372,7 +373,6 @@ function worksPage(){
   });
   document.getElementById('closeWorkViewer')?.addEventListener('click',()=>document.getElementById('workViewer')?.classList.remove('open'));
   document.getElementById('workViewer')?.addEventListener('click',e=>{if(e.target.id==='workViewer')e.target.classList.remove('open')});
-  app.insertAdjacentHTML('beforeend',modalsMarkup(false));
   if(all.length)refreshLikedWorks(all.map(w=>w.id));
 }
 async function messagesPage(){
@@ -1048,7 +1048,7 @@ async function route(){
   if(await handleOAuth())return;
   const p=location.pathname.replace(/\/+$/,'')||'/';
   const shareProfile=new URLSearchParams(location.search).get('profile');
-  if(shareProfile && (p==='/'||p==='/index.html'||p==='/home'||p==='/home.html')){
+  if(shareProfile && (p==='/'||p==='/index.html'||p==='/home'||p==='/home.html'||p==='/profile'||p==='/profile/index.html')){
     return await profile(decodeURIComponent(shareProfile.trim()));
   }
   if(p==='/'||p==='/index.html'||p==='/home'||p==='/home.html')return await home();
