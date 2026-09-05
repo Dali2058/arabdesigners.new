@@ -233,3 +233,42 @@ body:before{background:radial-gradient(circle at 50% -20%,rgba(63,111,255,.16),t
 .tag-input-wrap{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-height:44px;padding:7px 9px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:#10141b}.tag-input-wrap:focus-within{border-color:#6875ff}.tag-chips{display:flex;gap:6px;flex-wrap:wrap}.publish-tag-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:999px;background:#242a3a;color:#e8ebff;font-size:10px}.publish-tag-chip button{border:0;background:transparent;color:#9da6c7;cursor:pointer;padding:0}.tag-input{border:0;outline:0;background:transparent;color:#fff;min-width:130px;flex:1;height:28px}.tag-input::placeholder{color:rgba(255,255,255,.3)}.tag-add{border:0;background:#202635;color:#fff;border-radius:8px;width:30px;height:30px;cursor:pointer}
 .publish-modal-footer{padding:15px 24px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;gap:15px;background:#10141b}.publish-footer-note{font-size:10px;color:rgba(255,255,255,.38)}.publish-footer-actions{display:flex;gap:8px}
 @media(max-width:850px){.publish-form-grid{grid-template-columns:1fr}.publish-form-preview{border-right:0;border-bottom:1px solid rgba(255,255,255,.08)}.publish-form-fields{max-height:none}.publish-modal-footer{align-items:flex-end;flex-direction:column}.publish-footer-actions{width:100%;justify-content:flex-end}}
+
+/* v34 profile path + selected work heading spacing fix */
+.works-head > div:first-child {
+  min-width: 0;
+}
+.works-head .section-label {
+  display: block;
+  margin-bottom: 10px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.works-head h2 {
+  display: block;
+  margin: 0 !important;
+  padding: 0;
+  font-size: 24px;
+  line-height: 1.25 !important;
+  letter-spacing: -0.6px !important;
+  word-spacing: 2px;
+  white-space: normal;
+  overflow: visible;
+  word-break: normal;
+}
+@media (max-width: 700px) {
+  .works-head {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .works-head .section-label {
+    margin-bottom: 8px;
+    font-size: 9px;
+  }
+  .works-head h2 {
+    font-size: 21px;
+    line-height: 1.3 !important;
+    letter-spacing: -0.4px !important;
+    word-spacing: 1px;
+  }
+}

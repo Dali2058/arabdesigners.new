@@ -150,8 +150,10 @@ function collectLinkRows(){
   })).filter(l=>l.url).slice(0,10);
 }
 
+function profileShareUrl(username){ return `/?profile=${encodeURIComponent(String(username||'').trim())}`; }
+
 function nav(){
-  const profile = me ? `/profile/${encodeURIComponent(me.username)}` : '/login';
+  const profile = me ? profileShareUrl(me.username) : '/login';
   const mobileAuth = me ? `<a class="mobile-only" href="${profile}">My profile ↗</a><a class="mobile-only" href="/settings">Settings</a>${isAdmin()?'<a class="mobile-only admin-nav-link" href="/admin">Admin ↗</a>':''}` : `<a class="mobile-only" href="/login.html">Sign in with Discord ↗</a>`;
   return `<header class="topbar">
     <a class="brand" href="/home.html" aria-label="Arab Designers home">
@@ -335,7 +337,7 @@ async function publishPage(){
   document.getElementById('closePublishDetails').onclick=()=>document.getElementById('publishDetailsModal').classList.remove('open');
   document.getElementById('publishDetailsModal').onclick=e=>{if(e.target.id==='publishDetailsModal')e.target.classList.remove('open')};
   async function uploadFileForWork(workId,file,mediaId){const ext=(file.name.split('.').pop()||'jpg').toLowerCase();const up=await cloudCall('work-upload-url',{workId,mediaId,ext});const {error}=await window.__ARAB_SB.storage.from('works').uploadToSignedUrl(up.path,up.token,file);if(error)throw error;return {path:up.path,url:window.__ARAB_SB.storage.from('works').getPublicUrl(up.path).data.publicUrl};}
-  document.getElementById('publishDetailsForm').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target),btn=document.getElementById('confirmPublishBtn');if(!coverFile){notify('Please choose a project cover first.');document.getElementById('choosePublishCoverBtn')?.focus();return}const title=String(fd.get('title')||'').trim();if(!title){notify('Please enter a project title.');return}if(!String(fd.get('category')||'')){notify('Please choose a category.');categoryInput.focus();return}btn.disabled=true;btn.textContent='Publishing…';try{const workId=uid();const cover=await uploadFileForWork(workId,coverFile,'cover');const r=await cloudCall('create-work',{workId,mediaType:'image',mediaUrl:cover.url,mediaLabel:'Image',storagePath:cover.path,title:fd.get('title'),description:fd.get('description'),category:fd.get('category'),tags:publishTags,tools:fd.get('tools')});for(let i=0;i<stagedBlocks.length;i++){const b=stagedBlocks[i];if(b.file){const up=await uploadFileForWork(workId,b.file,`block-${i}`);await cloudCall('create-work-block',{workId,blockType:b.kind==='audio'?'audio':(b.kind==='video'?'video':'image'),mediaUrl:up.url,storagePath:up.path,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}else if(b.kind==='text'){await cloudCall('create-work-block',{workId,blockType:'text',content:b.content,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}else if(b.url){await cloudCall('create-work-block',{workId,blockType:'embed',mediaUrl:b.url,content:b.content||'',caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}}notify('Work published successfully.');location.href=`/profile/${encodeURIComponent(me.username)}#works`;}catch(err){notify(err.message||'Could not publish work.');btn.disabled=false;btn.textContent='Publish work ↗'}};
+  document.getElementById('publishDetailsForm').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target),btn=document.getElementById('confirmPublishBtn');if(!coverFile){notify('Please choose a project cover first.');document.getElementById('choosePublishCoverBtn')?.focus();return}const title=String(fd.get('title')||'').trim();if(!title){notify('Please enter a project title.');return}if(!String(fd.get('category')||'')){notify('Please choose a category.');categoryInput.focus();return}btn.disabled=true;btn.textContent='Publishing…';try{const workId=uid();const cover=await uploadFileForWork(workId,coverFile,'cover');const r=await cloudCall('create-work',{workId,mediaType:'image',mediaUrl:cover.url,mediaLabel:'Image',storagePath:cover.path,title:fd.get('title'),description:fd.get('description'),category:fd.get('category'),tags:publishTags,tools:fd.get('tools')});for(let i=0;i<stagedBlocks.length;i++){const b=stagedBlocks[i];if(b.file){const up=await uploadFileForWork(workId,b.file,`block-${i}`);await cloudCall('create-work-block',{workId,blockType:b.kind==='audio'?'audio':(b.kind==='video'?'video':'image'),mediaUrl:up.url,storagePath:up.path,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}else if(b.kind==='text'){await cloudCall('create-work-block',{workId,blockType:'text',content:b.content,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}else if(b.url){await cloudCall('create-work-block',{workId,blockType:'embed',mediaUrl:b.url,content:b.content||'',caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}}notify('Work published successfully.');location.href=profileShareUrl(me.username)+'#works';}catch(err){notify(err.message||'Could not publish work.');btn.disabled=false;btn.textContent='Publish work ↗'}};
 }
 
 function worksPage(){
@@ -346,7 +348,7 @@ function worksPage(){
   });
   all.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
   shell(`<section class="works-page-head"><div><div class="section-label">THE WORKS</div><h1>Work worth<br><span>being seen.</span></h1><p>Explore the latest projects published by designers across Arab Designers.</p></div>${me?`<a class="btn primary xl" href="/publish">+ Publish work</a>`:''}</section>
-  <section class="section"><div class="works-grid works-feed" id="worksGrid">${all.length?all.map(w=>`<div class="work-feed-item"><div class="work-feed-author"><img src="${esc(safeImage(w.designer.avatar))}" alt=""><div><a href="/profile/${encodeURIComponent(w.designer.username)}">${esc(w.designer.display_name||w.designer.username)}</a><span>@${esc(w.designer.username)}</span></div></div>${workCard(w,false)}</div>`).join(''):`<div class="empty-state wide"><span>✦</span><h3>No published work yet</h3><p>Designers can publish their first project from their profile.</p></div>`}</div></section>`);
+  <section class="section"><div class="works-grid works-feed" id="worksGrid">${all.length?all.map(w=>`<div class="work-feed-item"><div class="work-feed-author"><img src="${esc(safeImage(w.designer.avatar))}" alt=""><div><a href="${profileShareUrl(w.designer.username)}">${esc(w.designer.display_name||w.designer.username)}</a><span>@${esc(w.designer.username)}</span></div></div>${workCard(w,false)}</div>`).join(''):`<div class="empty-state wide"><span>✦</span><h3>No published work yet</h3><p>Designers can publish their first project from their profile.</p></div>`}</div></section>`);
   document.querySelectorAll('[data-open-work]').forEach(b=>b.onclick=()=>openWorkViewer(b.dataset.openWork));
   document.querySelectorAll('[data-like-work]').forEach(b=>b.onclick=async(e)=>{
     e.stopPropagation(); const w=findWork(b.dataset.likeWork); if(!w)return;
@@ -568,7 +570,7 @@ function designerCard(u,i){
   const badges=renderBadges(u);
   const labels=badgeList(u).map(b=>BADGE_META[b].label);
   const tagline=u.bio?esc(String(u.bio).replace(/\s+/g,' ').slice(0,90)):'Designer profile on Arab Designers.';
-  return `<a class="designer-card-v2" href="/profile/${encodeURIComponent(u.username)}">
+  return `<a class="designer-card-v2" href="${profileShareUrl(u.username)}">
     <div class="dc-banner ${banner?'':'blank'}" ${banner?`style="background-image:url('${esc(banner)}')"`:''}></div>
     <img class="dc-avatar" src="${esc(safeImage(u.avatar))}" alt="">
     <div class="dc-body">
