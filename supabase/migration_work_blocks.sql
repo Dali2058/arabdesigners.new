@@ -15,3 +15,8 @@ alter table public.work_blocks enable row level security;
 drop policy if exists "Public can read work blocks" on public.work_blocks;
 create policy "Public can read work blocks" on public.work_blocks for select to anon, authenticated using (true);
 revoke insert, update, delete on public.work_blocks from anon, authenticated;
+
+-- Layout controls for Behance-style project composition.
+alter table public.work_blocks add column if not exists layout text not null default 'full'
+  check (layout in ('full','half'));
+alter table public.work_blocks add column if not exists gap integer not null default 16;

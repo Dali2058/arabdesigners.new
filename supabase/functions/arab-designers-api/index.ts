@@ -280,6 +280,9 @@ async function handle(req: Request) {
       profile_id: profile.id,
       title: String(body.title || 'Untitled project').slice(0, 120),
       description: String(body.description || '').slice(0, 400),
+      category: String(body.category || '').slice(0, 60) || null,
+      tags: Array.isArray(body.tags) ? body.tags.map((x: unknown) => String(x).trim().slice(0, 40)).filter(Boolean).slice(0, 10) : [],
+      tools: String(body.tools || '').slice(0, 200) || null,
       media_url: mediaUrl,
       media_type: mediaType,
       media_label: String(body.mediaLabel || (mediaType === 'embed' ? 'Embed' : 'Image')).slice(0, 40),
@@ -303,7 +306,7 @@ async function handle(req: Request) {
     const { data, error } = await admin.from('work_blocks').insert({
       id: crypto.randomUUID(), work_id: workId, block_type: type,
       media_url: String(body.mediaUrl || ''), storage_path: String(body.storagePath || ''),
-      content: String(body.content || '').slice(0, 10000), caption: String(body.caption || '').slice(0, 300), position
+      content: String(body.content || '').slice(0, 10000), caption: String(body.caption || '').slice(0, 300), layout: ['full','half'].includes(String(body.layout)) ? String(body.layout) : 'full', gap: Math.max(0, Math.min(200, Number(body.gap || 16))), position
     }).select('*').single()
     if (error) throw error
     return json({ block: data })
