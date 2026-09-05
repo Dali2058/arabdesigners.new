@@ -116,3 +116,53 @@ body:before{background:radial-gradient(circle at 50% -20%,rgba(63,111,255,.16),t
 .settings-preview{position:relative}.settings-preview .badge-row{margin-left:0}
 .verified-line .badge-icon{width:13px;height:13px}
 .admin-actions{flex-wrap:wrap}
+
+/* ---- Portfolio works (v19) ---- */
+.works-section{margin-top:26px}
+.works-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.works-head h2{margin:6px 0 0;font-size:22px}
+.works-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.work-card{border:1px solid var(--line2);background:#0a0b0f;border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+.work-open{border:0;padding:0;margin:0;background:none;cursor:pointer;display:block;position:relative;width:100%;aspect-ratio:4/3;overflow:hidden}
+.work-thumb{display:block;width:100%;height:100%}
+.work-thumb img,.work-thumb video{width:100%;height:100%;object-fit:cover;display:block}
+.work-embed-thumb{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:linear-gradient(145deg,#141621,#0a0b10);color:var(--soft)}
+.work-embed-thumb span{font-size:26px}
+.work-embed-thumb small{font-size:10px;color:var(--muted)}
+.work-overlay{position:absolute;inset:0;display:flex;align-items:flex-end;padding:12px;background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.75));opacity:0;transition:.2s}
+.work-open:hover .work-overlay{opacity:1}
+.work-overlay span{font-size:12px;font-weight:700;color:#fff}
+.work-foot{display:flex;align-items:center;gap:10px;padding:9px 11px;border-top:1px solid var(--line2)}
+.work-stat{font-size:11px;color:var(--muted)}
+.work-like{border:1px solid var(--line2);background:#0d0e12;color:#bfc2cc;border-radius:9px;padding:5px 9px;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.work-like.liked{color:#ff6f91;border-color:rgba(255,111,145,.4)}
+.work-like.lg{font-size:14px;padding:9px 16px}
+.work-edit-actions{margin-left:auto;display:flex;gap:5px}
+
+.modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(4,4,6,.72);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal-card{width:min(560px,100%);max-height:88vh;overflow-y:auto;background:linear-gradient(145deg,#0b0c10,#07080b);border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:var(--shadow)}
+.modal-card.wide{width:min(760px,100%)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.modal-head h3{margin:0;font-size:16px}
+.work-viewer-media{border-radius:14px;overflow:hidden;background:#000;margin-bottom:12px}
+.work-viewer-media img,.work-viewer-media video{width:100%;max-height:60vh;object-fit:contain;display:block;background:#000}
+.work-viewer-media iframe{width:100%;aspect-ratio:16/9;border:0;display:block}
+.work-viewer-desc{color:var(--soft);font-size:13px;line-height:1.6;margin:0 0 14px}
+.work-viewer-stats{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.comments-section h4{margin:0 0 10px;font-size:13px;color:var(--soft)}
+.comments-list{display:flex;flex-direction:column;gap:10px;max-height:260px;overflow-y:auto;margin-bottom:12px}
+.comment-row{display:flex;gap:10px;align-items:flex-start}
+.comment-row img{width:32px;height:32px;border-radius:50%;object-fit:cover;flex:none}
+.comment-body{flex:1;min-width:0}
+.comment-head{display:flex;align-items:center;gap:8px}
+.comment-head strong{font-size:12px}
+.comment-head span{font-size:10px;color:var(--muted)}
+.comment-body p{margin:3px 0 0;font-size:12.5px;color:var(--soft);word-break:break-word}
+.comment-form{display:flex;gap:8px}
+.comment-form .input{flex:1}
+.upload-tabs{display:flex;gap:6px;margin-bottom:16px}
+.upload-tab{flex:1;border:1px solid var(--line2);background:#0d0e12;color:#bfc2cc;border-radius:10px;padding:9px;font-size:11.5px;font-weight:650;cursor:pointer}
+.upload-tab.active{background:linear-gradient(135deg,#7181ff,#2f6fff);color:#fff;border-color:transparent}
+#addWorkForm .label{display:block;margin:12px 0 6px;font-size:11px;color:var(--muted)}
+#addWorkForm .label:first-of-type{margin-top:0}

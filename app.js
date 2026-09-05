@@ -317,6 +317,214 @@ function setProfileMeta(d, username){
   document.title=title; setMeta('description',desc); setMeta('og:title',title,true); setMeta('og:description',desc,true); setMeta('og:site_name','Arab Designers',true); setMeta('og:image',profileBanner(d)||BANNER,true); setMeta('twitter:title',title); setMeta('twitter:description',desc); setMeta('twitter:image',profileBanner(d)||BANNER);
 }
 
+// ---- Portfolio work: cards, viewer modal, upload modal ----
+function workThumb(w){
+  if(w.mediaType==='video') return `<video src="${esc(w.mediaUrl)}" muted loop playsinline preload="metadata"></video>`;
+  if(w.mediaType==='embed') return `<div class="work-embed-thumb"><span>↗</span><small>${esc(w.mediaLabel||'Embed')}</small></div>`;
+  return `<img src="${esc(w.mediaUrl)}" alt="${esc(w.title||'')}" loading="lazy">`;
+}
+function workCard(w,editable){
+  const liked=cloudState.likedWorks?.has(w.id);
+  return `<div class="work-card" data-work-id="${esc(w.id)}">
+    <button class="work-open" data-open-work="${esc(w.id)}" type="button">
+      <span class="work-thumb ${esc(w.mediaType)}">${workThumb(w)}</span>
+      <span class="work-overlay"><span>${esc(w.title||'Untitled project')}</span></span>
+    </button>
+    <div class="work-foot">
+      <span class="work-stat" title="Views">👁 ${formatNumber(w.views)}</span>
+      <button class="work-like ${liked?'liked':''}" data-like-work="${esc(w.id)}" type="button">${liked?'♥':'♡'} <span>${formatNumber(w.likes)}</span></button>
+      ${editable?`<span class="work-edit-actions"><button class="icon-btn" data-move-work="${esc(w.id)}" data-dir="up" type="button" title="Move up">↑</button><button class="icon-btn" data-move-work="${esc(w.id)}" data-dir="down" type="button" title="Move down">↓</button><button class="icon-btn danger" data-delete-work="${esc(w.id)}" type="button" title="Delete">✕</button></span>`:''}
+    </div>
+  </div>`;
+}
+function worksSection(profileId,same,displayName){
+  const works=(cloudState.works?.[profileId]||[]);
+  return `<section class="section works-section"><div class="works-head"><div><div class="section-label">SELECTED WORK</div><h2>${same?'Your projects.':`${esc(displayName)}’s projects.`}</h2></div>${same?'<button class="btn primary" id="addWorkBtn" type="button">+ Add work</button>':''}</div><div class="works-grid" id="worksGrid">${works.length?works.map(w=>workCard(w,same)).join(''):`<div class="empty-state wide"><span>✦</span><h3>No work yet</h3><p>${same?'Add your first project to showcase it on your profile.':'This designer hasn’t published any work yet.'}</p></div>`}</div></section>${modalsMarkup(same)}`;
+}
+function modalsMarkup(same){
+  return `<div class="modal-overlay" id="workViewer"><div class="modal-card wide">
+    <div class="modal-head"><h3 id="workViewerTitle"></h3><button class="icon-btn" id="closeWorkViewer" type="button">✕</button></div>
+    <div class="work-viewer-media" id="workViewerMedia"></div>
+    <p class="work-viewer-desc" id="workViewerDesc"></p>
+    <div class="work-viewer-stats"><span id="workViewerViews"></span><button class="work-like lg" id="workViewerLike" type="button"></button></div>
+    <div class="comments-section">
+      <h4>Comments</h4>
+      <div class="comments-list" id="commentsList"><p class="form-note">Loading comments…</p></div>
+      ${me?`<form id="commentForm" class="comment-form"><input class="input" name="content" maxlength="500" placeholder="Add a comment…" autocomplete="off" required><button class="btn primary" type="submit">Send</button></form>`:`<p class="form-note">Sign in with Discord to like or comment.</p>`}
+    </div>
+  </div></div>${same?`<div class="modal-overlay" id="addWorkModal"><div class="modal-card">
+    <div class="modal-head"><h3>Add work</h3><button class="icon-btn" id="closeAddWork" type="button">✕</button></div>
+    <div class="upload-tabs">
+      <button class="upload-tab active" data-upload-tab="file" type="button">Image / Video / GIF</button>
+      <button class="upload-tab" data-upload-tab="embed" type="button">Embed link</button>
+    </div>
+    <form id="addWorkForm">
+      <label class="label">Title</label>
+      <input class="input" name="title" maxlength="120" placeholder="Project title" required>
+      <label class="label">Description <span class="form-note" style="display:inline">(optional)</span></label>
+      <textarea class="textarea" name="description" maxlength="400" placeholder="What's this project about?"></textarea>
+      <div data-upload-pane="file">
+        <label class="label">File</label>
+        <input class="input" type="file" name="file" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime">
+        <p class="form-note">Images, GIFs or videos, up to 30MB.</p>
+      </div>
+      <div data-upload-pane="embed" style="display:none">
+        <label class="label">Embed URL</label>
+        <input class="input" name="embedUrl" placeholder="https://www.youtube.com/embed/…">
+        <p class="form-note">Paste a direct embed link (YouTube/Vimeo "embed" URL, CodePen, Figma, etc).</p>
+      </div>
+      <button class="btn primary full" type="submit" id="addWorkSubmit">Publish work ↗</button>
+    </form>
+  </div></div>`:''}`;
+}
+function findWork(workId){
+  for(const list of Object.values(cloudState.works||{})){ const w=list.find(x=>x.id===workId); if(w)return w; }
+  return null;
+}
+function renderWorkMedia(w){
+  if(w.mediaType==='video') return `<video src="${esc(w.mediaUrl)}" controls playsinline></video>`;
+  if(w.mediaType==='embed') return `<iframe src="${esc(w.mediaUrl)}" loading="lazy" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" referrerpolicy="no-referrer" allowfullscreen></iframe>`;
+  return `<img src="${esc(w.mediaUrl)}" alt="${esc(w.title||'')}">`;
+}
+function commentRow(c){
+  const mine=me&&me.username===c.username;
+  return `<div class="comment-row" data-comment-id="${esc(c.id)}"><img src="${esc(safeImage(c.avatar))}" alt=""><div class="comment-body"><div class="comment-head"><strong>${esc(c.display_name||c.username)}</strong><span>${timeAgo(new Date(c.created_at).getTime())}</span></div><p>${esc(c.content)}</p></div>${(mine||isAdmin())?`<button class="icon-btn danger" data-delete-comment="${esc(c.id)}" type="button" title="Delete">✕</button>`:''}</div>`;
+}
+async function openWorkViewer(workId){
+  const w=findWork(workId); if(!w)return;
+  const modal=document.getElementById('workViewer'); if(!modal)return;
+  document.getElementById('workViewerTitle').textContent=w.title||'Untitled project';
+  document.getElementById('workViewerMedia').innerHTML=renderWorkMedia(w);
+  document.getElementById('workViewerDesc').textContent=w.description||'';
+  document.getElementById('workViewerDesc').style.display=w.description?'':'none';
+  document.getElementById('workViewerViews').textContent=`👁 ${formatNumber(w.views)} views`;
+  const likeBtn=document.getElementById('workViewerLike');
+  const paintLike=()=>{ const liked=cloudState.likedWorks?.has(w.id); likeBtn.innerHTML=`${liked?'♥':'♡'} <span>${formatNumber(w.likes)}</span>`; likeBtn.classList.toggle('liked',!!liked); };
+  paintLike();
+  likeBtn.onclick=async()=>{
+    if(!me){notify('Sign in with Discord to like work.');return}
+    const liked=!cloudState.likedWorks?.has(w.id);
+    try{
+      const r=await cloudCall('like-work',{workId:w.id,liked});
+      w.likes=r.likes; if(liked)cloudState.likedWorks.add(w.id); else cloudState.likedWorks.delete(w.id);
+      paintLike();
+      document.querySelectorAll(`[data-work-id="${w.id}"] [data-like-work]`).forEach(b=>{b.innerHTML=`${liked?'♥':'♡'} <span>${formatNumber(w.likes)}</span>`;b.classList.toggle('liked',liked);});
+    }catch(e){notify(e.message||'Could not update like.')}
+  };
+  const list=document.getElementById('commentsList');
+  list.innerHTML='<p class="form-note">Loading comments…</p>';
+  modal.classList.add('open');
+  cloudCall('view-work',{workId:w.id}).then(r=>{ if(typeof r.views==='number'){w.views=r.views; document.getElementById('workViewerViews').textContent=`👁 ${formatNumber(w.views)} views`;} }).catch(()=>{});
+  try{
+    const comments=await cloudJson(`${SUPABASE_URL}/rest/v1/work_comments?select=*&work_id=eq.${encodeURIComponent(w.id)}&order=created_at.asc`);
+    list.innerHTML=comments.length?comments.map(commentRow).join(''):'<p class="form-note">No comments yet.</p>';
+    document.querySelectorAll('[data-delete-comment]').forEach(b=>b.onclick=async()=>{
+      try{ await cloudCall('delete-comment',{commentId:b.dataset.deleteComment}); b.closest('[data-comment-id]')?.remove(); }
+      catch(e){notify(e.message||'Could not delete comment.')}
+    });
+  }catch(e){list.innerHTML='<p class="form-note">Could not load comments.</p>';}
+  const form=document.getElementById('commentForm');
+  if(form)form.onsubmit=async e=>{
+    e.preventDefault();
+    const content=new FormData(e.target).get('content');
+    try{
+      const r=await cloudCall('add-comment',{workId:w.id,content});
+      if(list.querySelector('.form-note'))list.innerHTML='';
+      list.insertAdjacentHTML('beforeend',commentRow(r.comment));
+      e.target.reset();
+    }catch(err){notify(err.message||'Could not post comment.')}
+  };
+}
+async function uploadWorkFile(file){
+  const ext=(file.name.split('.').pop()||'').toLowerCase();
+  const mediaType=file.type.startsWith('video/')?'video':'image';
+  const workId=uid();
+  const up=await cloudCall('work-upload-url',{workId,ext});
+  const sb=window.__ARAB_SB;
+  if(!sb) throw new Error('Cloud storage is not configured.');
+  const {error}=await sb.storage.from('works').uploadToSignedUrl(up.path,up.token,file);
+  if(error) throw new Error(error.message||'Upload failed.');
+  const {data:pub}=sb.storage.from('works').getPublicUrl(up.path);
+  return {workId:up.workId,mediaType,mediaUrl:pub.publicUrl,storagePath:up.path,mediaLabel:mediaType==='video'?'Video':(file.type==='image/gif'?'GIF':'Image')};
+}
+function wireWorks(profileId,same,displayName){
+  document.querySelectorAll('[data-open-work]').forEach(b=>b.onclick=()=>openWorkViewer(b.dataset.openWork));
+  document.querySelectorAll('[data-like-work]').forEach(b=>b.onclick=async(e)=>{
+    e.stopPropagation();
+    const workId=b.dataset.likeWork; const w=findWork(workId); if(!w)return;
+    if(!me){notify('Sign in with Discord to like work.');return}
+    const liked=!cloudState.likedWorks?.has(workId);
+    try{
+      const r=await cloudCall('like-work',{workId,liked});
+      w.likes=r.likes; if(liked)cloudState.likedWorks.add(workId); else cloudState.likedWorks.delete(workId);
+      document.querySelectorAll(`[data-like-work="${workId}"]`).forEach(el=>{el.innerHTML=`${liked?'♥':'♡'} <span>${formatNumber(w.likes)}</span>`;el.classList.toggle('liked',liked);});
+    }catch(err){notify(err.message||'Could not update like.')}
+  });
+  document.getElementById('closeWorkViewer')?.addEventListener('click',()=>document.getElementById('workViewer')?.classList.remove('open'));
+  document.getElementById('workViewer')?.addEventListener('click',e=>{ if(e.target.id==='workViewer') e.target.classList.remove('open'); });
+  if(!same)return;
+  const addBtn=document.getElementById('addWorkBtn');
+  const addModal=document.getElementById('addWorkModal');
+  addBtn?.addEventListener('click',()=>addModal?.classList.add('open'));
+  document.getElementById('closeAddWork')?.addEventListener('click',()=>addModal?.classList.remove('open'));
+  addModal?.addEventListener('click',e=>{ if(e.target.id==='addWorkModal') e.target.classList.remove('open'); });
+  let activeTab='file';
+  document.querySelectorAll('[data-upload-tab]').forEach(t=>t.onclick=()=>{
+    activeTab=t.dataset.uploadTab;
+    document.querySelectorAll('[data-upload-tab]').forEach(x=>x.classList.toggle('active',x===t));
+    document.querySelectorAll('[data-upload-pane]').forEach(p=>p.style.display=p.dataset.uploadPane===activeTab?'':'none');
+  });
+  const form=document.getElementById('addWorkForm');
+  form.onsubmit=async e=>{
+    e.preventDefault();
+    const fd=new FormData(e.target);
+    const submitBtn=document.getElementById('addWorkSubmit');
+    submitBtn.disabled=true; submitBtn.textContent='Publishing…';
+    try{
+      let payload;
+      if(activeTab==='embed'){
+        const embedUrl=String(fd.get('embedUrl')||'').trim();
+        if(!/^https:\/\//i.test(embedUrl)) throw new Error('Embed URL must start with https://');
+        payload={workId:uid(),mediaType:'embed',mediaUrl:embedUrl,mediaLabel:'Embed',storagePath:''};
+      }else{
+        const file=fd.get('file');
+        if(!file||!file.size) throw new Error('Choose a file to upload.');
+        if(file.size>31457280) throw new Error('File is larger than 30MB.');
+        payload=await uploadWorkFile(file);
+      }
+      const r=await cloudCall('create-work',{...payload,title:fd.get('title'),description:fd.get('description')});
+      const w=r.work;
+      (cloudState.works[profileId] ||= []).push({id:w.id,profileId:w.profile_id,title:w.title,description:w.description||'',mediaUrl:w.media_url,mediaType:w.media_type,mediaLabel:w.media_label,storagePath:w.storage_path,views:w.views||0,likes:w.likes||0,createdAt:w.created_at});
+      notify('Work published.');
+      addModal.classList.remove('open'); form.reset();
+      await profile(me.username);
+    }catch(err){ notify(err.message||'Could not publish work.'); submitBtn.disabled=false; submitBtn.textContent='Publish work ↗'; }
+  };
+  document.querySelectorAll('[data-delete-work]').forEach(b=>b.onclick=async(e)=>{
+    e.stopPropagation();
+    if(!confirm('Delete this work? This cannot be undone.'))return;
+    try{
+      await cloudCall('delete-work',{workId:b.dataset.deleteWork});
+      cloudState.works[profileId]=(cloudState.works[profileId]||[]).filter(w=>w.id!==b.dataset.deleteWork);
+      notify('Work deleted.');
+      await profile(me.username);
+    }catch(err){notify(err.message||'Could not delete work.')}
+  });
+  document.querySelectorAll('[data-move-work]').forEach(b=>b.onclick=async(e)=>{
+    e.stopPropagation();
+    const list=cloudState.works[profileId]||[];
+    const idx=list.findIndex(w=>w.id===b.dataset.moveWork);
+    const dir=b.dataset.dir==='up'?-1:1;
+    const swapIdx=idx+dir;
+    if(idx<0||swapIdx<0||swapIdx>=list.length)return;
+    [list[idx],list[swapIdx]]=[list[swapIdx],list[idx]];
+    try{
+      await cloudCall('reorder-works',{order:list.map(w=>w.id)});
+      await profile(me.username);
+    }catch(err){notify(err.message||'Could not reorder work.')}
+  });
+}
+
 async function profile(username){
   try{await loadCloudState();}catch(e){console.warn('Cloud unavailable:',e);}
   const target=username || me?.username || 'designer';
@@ -328,12 +536,17 @@ async function profile(username){
   }
   const banner=profileBanner(d);
   setProfileMeta(d,target);
+  const works=(cloudState.works?.[d.id]||[]);
   shell(`<section class="profile-shell">
     <div class="profile-cover ${banner?'has-banner':'no-banner'}" ${banner?`style="background-image:url('${esc(banner)}')"`:''}><div class="cover-shade"></div><div class="cover-top"><span>${banner?'DISCORD PROFILE BANNER':'NO DISCORD BANNER'}</span>${same?'<span class="cover-safe">PROFILE HEADER</span>':''}</div></div>
     <div class="profile-main"><div class="profile-heading"><img class="profile-avatar-v2" src="${esc(safeImage(d.avatar))}" alt="${esc(d.display_name||d.username)}"><div class="profile-title"><div class="verified-line"><span class="status-dot"></span> Designer profile <span class="badge-row">${renderBadges(d)}</span></div><h1>${esc(d.display_name||d.username)}</h1><p>@${esc(d.username)}</p></div><div class="profile-actions">${same?'<a class="btn" href="/settings">Edit profile</a>':`<a class="btn primary" href="/contact?designer=${encodeURIComponent(target)}">Contact designer ↗</a>`}</div></div>
       <div class="profile-bio"><p>${esc(d.bio||'Designer focused on visual identity and digital experiences.')}</p><div class="profile-pills"><span>Graphic Design</span><span>UI/UX</span><span>Visual Identity</span><span>Creative Direction</span></div>${socialBadges(d)}</div>
-      <div class="profile-stats"><div><strong>2026</strong><span>Member</span></div><div><strong>Discord</strong><span>Connected</span></div><div><strong>${d.verified?'Verified':'Open'}</strong><span>Status</span></div><div><strong>Arab</strong><span>Designers</span></div></div>
-    </div></section>`);
+      <div class="profile-stats"><div><strong>${formatNumber(d.views||0)}</strong><span>Profile views</span></div><div><strong>${works.length}</strong><span>Projects</span></div><div><strong>Discord</strong><span>Connected</span></div><div><strong>${d.verified?'Verified':'Open'}</strong><span>Status</span></div></div>
+    </div></section>
+    ${worksSection(d.id,same,d.display_name||d.username)}`);
+  wireWorks(d.id,same,d.display_name||d.username);
+  if(!same) cloudCall('view-profile',{username:target}).then(r=>{ if(typeof r.views==='number'){ d.views=r.views; document.querySelector('.profile-stats strong')&&(document.querySelector('.profile-stats strong').textContent=formatNumber(r.views)); } }).catch(()=>{});
+  if(works.length) refreshLikedWorks(works.map(w=>w.id)).then(()=>{ document.querySelectorAll('[data-like-work]').forEach(b=>{ const w=findWork(b.dataset.likeWork); if(!w)return; const liked=cloudState.likedWorks.has(w.id); b.innerHTML=`${liked?'♥':'♡'} <span>${formatNumber(w.likes)}</span>`; b.classList.toggle('liked',liked); }); });
 }
 const CLOUD = window.ARAB_DESIGNERS_CONFIG || {};
 const SUPABASE_URL = String(CLOUD.SUPABASE_URL || '').replace(/\/$/, '');
@@ -380,14 +593,28 @@ async function cloudCall(action,payload={}){
 async function loadCloudState(force=false){
   if(cloudLoaded&&!force)return cloudState;
   requireCloud();
-  const profiles=await cloudJson(`${SUPABASE_URL}/rest/v1/profiles?select=*&order=display_name.asc`);
+  const [profiles,works]=await Promise.all([
+    cloudJson(`${SUPABASE_URL}/rest/v1/profiles?select=*&order=display_name.asc`),
+    cloudJson(`${SUPABASE_URL}/rest/v1/works?select=*&order=position.asc,created_at.asc`).catch(()=>[])
+  ]);
   const map={};
   profiles.forEach(p=>map[p.username]={
     id:p.id,discord_id:p.discord_id,username:p.username,display_name:p.display_name,avatar:p.avatar||FALLBACK_LOGO,
-    banner:p.banner||p.discord_banner||'',discordBanner:p.discord_banner||'',bio:p.bio||'',links:p.links||[],connections:p.connections||[],badges:p.badges||[],verified:!!p.verified,role:p.role||'designer'
+    banner:p.banner||p.discord_banner||'',discordBanner:p.discord_banner||'',bio:p.bio||'',links:p.links||[],connections:p.connections||[],badges:p.badges||[],verified:!!p.verified,role:p.role||'designer',views:p.views||0
   });
-  cloudState={profiles:map};
+  const worksByProfile={};
+  (works||[]).forEach(w=>{
+    (worksByProfile[w.profile_id] ||= []).push({id:w.id,profileId:w.profile_id,title:w.title,description:w.description||'',mediaUrl:w.media_url,mediaType:w.media_type,mediaLabel:w.media_label,storagePath:w.storage_path,views:w.views||0,likes:w.likes||0,createdAt:w.created_at});
+  });
+  cloudState={profiles:map,works:worksByProfile,likedWorks:cloudState.likedWorks||new Set()};
   cloudLoaded=true;return cloudState;
+}
+async function refreshLikedWorks(workIds){
+  if(!me||!workIds.length)return;
+  try{
+    const r=await cloudCall('liked-works',{workIds});
+    cloudState.likedWorks=new Set(r.workIds||[]);
+  }catch(e){console.warn('Could not load likes:',e);}
 }
 function readProfiles(){return cloudState.profiles||{}}
 function writeProfiles(){/* Cloud is authoritative. */}
