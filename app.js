@@ -1,20 +1,4 @@
 const app = document.getElementById('app');
-
-// Global project viewer close handler. Kept outside the dynamically-rendered modal
-// so the close button keeps working even after the modal HTML is recreated.
-window.closeWorkViewerModal = function(){
-  const modal = document.getElementById('workViewer');
-  if(modal) modal.classList.remove('open');
-  document.body.classList.remove('modal-open');
-};
-
-document.addEventListener('click', function(e){
-  const closeBtn = e.target.closest && e.target.closest('#closeWorkViewer');
-  if(closeBtn){ e.preventDefault(); e.stopPropagation(); window.closeWorkViewerModal(); return; }
-  const modal = e.target.closest && e.target.closest('#workViewer');
-  if(modal && e.target === modal) window.closeWorkViewerModal();
-}, true);
-
 const toast = document.getElementById('toast');
 
 const LOGO = '/logo-transparent.png';
@@ -139,30 +123,12 @@ function mapConnections(raw){
     .map(c => ({type:String(c.type).toLowerCase(), name:c.name, id:c.id, url:connectionUrl(c.type,c.name,c.id)}))
     .slice(0,10);
 }
-function socialIcon(type){
-  const t=String(type||'').toLowerCase();
-  const common=`fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"`;
-  if(t==='youtube') return `<svg viewBox="0 0 24 24" aria-hidden="true"><path ${common} d="M21 7.2a2.7 2.7 0 0 0-1.9-1.9C17.4 4.8 12 4.8 12 4.8s-5.4 0-7.1.5A2.7 2.7 0 0 0 3 7.2 28 28 0 0 0 2.6 12 28 28 0 0 0 3 16.8a2.7 2.7 0 0 0 1.9 1.9c1.7.5 7.1.5 7.1.5s5.4 0 7.1-.5a2.7 2.7 0 0 0 1.9-1.9 28 28 0 0 0 .4-4.8 28 28 0 0 0-.4-4.8Z"/><path ${common} d="m10 9 5 3-5 3V9Z"/></svg>`;
-  if(t==='instagram') return `<svg viewBox="0 0 24 24" aria-hidden="true"><rect ${common} x="3.5" y="3.5" width="17" height="17" rx="5"/><circle ${common} cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.7" r="1" fill="currentColor"/></svg>`;
-  if(t==='twitter'||t==='x') return `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 4h3.1l4.2 5.5L16.8 4H19l-5.7 6.7L19.5 20h-3.1l-4.6-6-4.7 6H5l5.8-6.9L5 4Z"/></svg>`;
-  if(t==='tiktok') return `<svg viewBox="0 0 24 24" aria-hidden="true"><path ${common} d="M14 4v10.1a4 4 0 1 1-3.2-3.9"/><path ${common} d="M14 4c.5 2.4 1.8 3.8 4 4.1"/></svg>`;
-  if(t==='github') return `<svg viewBox="0 0 24 24" aria-hidden="true"><path ${common} d="M15.5 20v-2.4c0-.9-.3-1.5-.9-2 2.9-.3 5.9-1.4 5.9-6.2 0-1.4-.5-2.6-1.3-3.5.1-.3.6-1.7-.1-3.5 0 0-1.1-.4-3.6 1.3a12.5 12.5 0 0 0-6.5 0C6.5 2 5.4 2.4 5.4 2.4c-.7 1.8-.2 3.2-.1 3.5A5.2 5.2 0 0 0 4 9.4c0 4.8 3 5.9 5.8 6.2-.4.4-.8 1-.8 2V20"/><path ${common} d="M9 18c-2.2 1-2.5-1-3.5-1"/></svg>`;
-  if(t==='twitch') return `<svg viewBox="0 0 24 24" aria-hidden="true"><path ${common} d="M4 3h17v12l-4 4h-4l-3 3v-3H4V3Z"/><path ${common} d="M9 7v5M15 7v5"/></svg>`;
-  if(t==='linkedin') return `<svg viewBox="0 0 24 24" aria-hidden="true"><path ${common} d="M5 8v11M5 5.2v.1M10 19v-6a4 4 0 0 1 8 0v6M10 8v11"/></svg>`;
-  if(t==='behance') return `<svg viewBox="0 0 24 24" aria-hidden="true"><path ${common} d="M4 5h6a3 3 0 0 1 .5 5.9A3.5 3.5 0 0 1 10 18H4V5Zm0 6h5.3M15 10h5c0-2-1.3-3-3-3s-2.8 1.2-3 3Zm0 1.5c0 2 1.2 3.5 3.2 3.5 1.3 0 2.2-.5 2.8-1.2"/></svg>`;
-  if(t==='dribbble') return `<svg viewBox="0 0 24 24" aria-hidden="true"><circle ${common} cx="12" cy="12" r="9"/><path ${common} d="M5 7.5c4 2.5 9.1 2.8 14.4 1.1M7 18c3.3-3 7.6-4.4 12.4-4.1M8.7 4.3c2.5 3 4.2 6.5 5.1 10.7"/></svg>`;
-  if(t==='spotify') return `<svg viewBox="0 0 24 24" aria-hidden="true"><circle ${common} cx="12" cy="12" r="9"/><path ${common} d="M7.5 9.5c3.1-.9 6.3-.7 9 .5M8 12.5c2.5-.6 5-.4 7.2.5M8.7 15.3c1.8-.3 3.6-.1 5.3.5"/></svg>`;
-  if(t==='facebook') return `<svg viewBox="0 0 24 24" aria-hidden="true"><circle ${common} cx="12" cy="12" r="9"/><path ${common} d="M13.2 19v-6h2l.3-2.2h-2.3V9.4c0-.7.2-1.2 1.2-1.2h1.2V6.2c-.2 0-.9-.1-1.7-.1-1.7 0-2.9 1-2.9 3v1.7H9v2.2h2v6"/></svg>`;
-  if(t==='reddit') return `<svg viewBox="0 0 24 24" aria-hidden="true"><circle ${common} cx="12" cy="12" r="9"/><circle ${common} cx="9" cy="11" r="1"/><circle ${common} cx="15" cy="11" r="1"/><path ${common} d="M8.5 14c1.8 1.6 5.2 1.6 7 0M14 8l1-2 2 1"/></svg>`;
-  if(t==='steam') return `<svg viewBox="0 0 24 24" aria-hidden="true"><circle ${common} cx="15.5" cy="8.5" r="3.5"/><circle ${common} cx="8" cy="15.5" r="2.5"/><path ${common} d="m10 14 3.2-3.2"/></svg>`;
-  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path ${common} d="M10 13a4 4 0 0 0 5.7.1l2-2a4 4 0 0 0-5.7-5.7l-1.1 1.1M14 11a4 4 0 0 0-5.7-.1l-2 2A4 4 0 0 0 8 18.6l1.1-1.1"/></svg>`;
-}
 function socialBadges(d){
   const conns=(Array.isArray(d.connections)?d.connections:[]).filter(c=>c&&c.url&&c.url!=='#').map(c=>({type:c.type,label:c.name||platformMeta(c.type).label,url:c.url}));
   const manual=(Array.isArray(d.links)?d.links:[]).filter(l=>l&&l.url).map(l=>({type:l.type,label:platformMeta(l.type).label,url:l.url}));
   const all=[...conns,...manual];
   if(!all.length) return '';
-  return `<div class="social-badges">${all.map(l=>`<a class="social-badge" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(l.label)}" title="${esc(l.label)}" style="--pc:${platformMeta(l.type).color}">${socialIcon(l.type)}</a>`).join('')}</div>`;
+  return `<div class="social-badges">${all.map(l=>{const m=platformMeta(l.type);return `<a class="social-badge" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" style="--pc:${m.color}"><span class="sb-code">${esc(m.code)}</span><span>${esc(l.label)}</span></a>`;}).join('')}</div>`;
 }
 function linkRow(l={}){
   const type=String(l.type||'website').toLowerCase();
@@ -273,23 +239,15 @@ async function publishPage(){
   <input id="publishImageFiles" type="file" hidden multiple accept="image/png,image/jpeg,image/webp,image/gif">
   <input id="publishVideoFile" type="file" hidden accept="video/mp4,video/webm,video/quicktime,audio/mpeg,audio/wav,audio/ogg,audio/mp4">
   <input id="publishAssetFiles" type="file" hidden multiple>
-  <div class="modal-overlay" id="cropModal"><div class="modal-card crop-card"><div class="modal-head"><div><h3>Choose image crop</h3><p class="crop-subtitle" id="cropSubtitle">Choose how the image will appear, then drag and zoom the part you want.</p></div><button class="icon-btn" id="closeCrop" type="button">✕</button></div><div class="crop-size-row"><div><label class="label" for="cropPreset">Display size</label><select class="input" id="cropPreset"><option value="wide">Wide · 16:9</option><option value="landscape">Landscape · 3:2</option><option value="square">Square · 1:1</option><option value="portrait">Portrait · 4:5</option></select></div><div class="crop-dimensions" id="cropDimensions">1600 × 900 px</div></div><div class="crop-stage"><canvas id="cropCanvas" width="800" height="450"></canvas></div><div class="crop-controls"><span>−</span><input id="cropZoom" type="range" min="1" max="3" step="0.01" value="1" aria-label="Zoom"><span>＋</span></div><p class="crop-help">Drag the image to choose the visible area. The crop is applied only when you publish.</p><div class="crop-actions"><button class="btn" id="cropCancel" type="button">Cancel</button><button class="btn primary" id="cropApply" type="button">Use this crop</button></div></div></div>
+  <div class="modal-overlay" id="cropModal"><div class="modal-card crop-card"><div class="modal-head"><h3>Crop image</h3><button class="icon-btn" id="closeCrop" type="button">✕</button></div><p class="form-note">All project images are normalized to <strong>1600 × 900</strong>. Drag to position and use the slider to zoom.</p><div class="crop-stage"><canvas id="cropCanvas" width="800" height="450"></canvas></div><div class="crop-controls"><span>−</span><input id="cropZoom" type="range" min="1" max="3" step="0.01" value="1"><span>＋</span></div><div class="crop-actions"><button class="btn" id="cropCancel" type="button">Cancel</button><button class="btn primary" id="cropApply" type="button">Apply</button></div></div></div>
   <div class="modal-overlay" id="publishDetailsModal"><div class="modal-card publish-details-card publish-details-wide"><div class="modal-head"><div><h3>Publish Your Project</h3><p class="publish-modal-subtitle">Add the details people will see before they open your work.</p></div><button class="icon-btn" id="closePublishDetails" type="button">✕</button></div><form id="publishDetailsForm"><div class="publish-form-grid"><section class="publish-form-preview"><div class="publish-preview-heading"><div><b>Project Cover Preview</b><span>This is how your project cover will appear on Works and your profile.</span></div><button class="btn" type="button" id="choosePublishCoverBtn">▧ Choose cover</button></div><div class="publish-cover-large" id="publishCoverMini"><div class="publish-cover-empty"><span>＋</span><b>No cover selected</b><small>Choose a 16:9 image to preview it here.</small></div></div><div class="publish-cover-requirements"><div><b>Cover requirements</b><span>Recommended: 1600 × 900 px · 16:9</span><span>JPG, PNG or GIF · Max 30MB</span></div><button class="btn" type="button" id="changeCoverBtn">Change Cover</button></div><div class="publish-cover-status" id="publishCoverStatus">No cover selected yet.</div></section><section class="publish-form-fields"><label class="label">Project Title <span class="required-star">*</span></label><input class="input" name="title" maxlength="120" placeholder="e.g. Brand Identity — Al Noor" required><div class="field-count" id="titleCount">0/120</div><label class="label">Project Description <span class="optional-label">optional</span></label><textarea class="textarea" name="description" maxlength="400" placeholder="Tell people about this project, your process, and what you created…"></textarea><div class="field-count" id="descriptionCount">0/400</div><label class="label">Category <span class="required-star">*</span></label><select class="input" name="category" required><option value="">Select a category</option><option>Graphic Design</option><option>Branding</option><option>UI/UX</option><option>Web Design</option><option>Illustration</option><option>Motion</option><option>Photography</option><option>3D Art</option><option>Architecture</option><option>Product Design</option><option>Typography</option><option>Other</option></select><label class="label">Tags <span class="optional-label">up to 10</span></label><div class="tag-input-wrap"><div class="tag-chips" id="publishTagChips"></div><input id="publishTagInput" class="tag-input" placeholder="Add tags (e.g. branding, uiux, logo design)…" autocomplete="off"><button type="button" id="addTagBtn" class="tag-add">＋</button></div><input type="hidden" name="tags" id="publishTagsValue"><label class="label">Tools Used <span class="optional-label">optional</span></label><input class="input" name="tools" maxlength="200" placeholder="e.g. Figma, Photoshop, Illustrator"><div class="publish-publish-summary" id="publishSummary"></div></section></div><div class="publish-modal-footer"><div class="publish-footer-note">Your cover, title and category are required. You can edit the project later.</div><div class="publish-footer-actions"><button class="btn" type="button" id="savePublishDraft">Save as Draft</button><button class="btn primary" type="submit" id="confirmPublishBtn">Publish Work ↗</button></div></div></form></div></div>
   <div class="modal-overlay" id="toolModal"><div class="modal-card"><div class="modal-head"><h3 id="toolModalTitle">Add content</h3><button class="icon-btn" id="closeToolModal" type="button">✕</button></div><div id="toolModalBody"></div></div></div>`);
 
-  const CROP_PRESETS={
-    wide:{label:'Wide · 16:9',ratio:16/9,height:900},
-    landscape:{label:'Landscape · 3:2',ratio:3/2,height:1067},
-    square:{label:'Square · 1:1',ratio:1,height:1600},
-    portrait:{label:'Portrait · 4:5',ratio:4/5,height:2000}
-  };
-  let coverFile=null, stagedBlocks=[], stagedAssets=[];
-  let cropQueue=[], cropResolve=null, cropImg=null, cropScale=1, cropX=0, cropY=0, drag=null, cropSourceName='', cropMode='content', cropPreset='wide', cropTargetW=1600, cropTargetH=900;
-  const canvas=document.getElementById('cropCanvas'), ctx=canvas.getContext('2d'), zoom=document.getElementById('cropZoom'), cropPresetInput=document.getElementById('cropPreset'), cropDimensions=document.getElementById('cropDimensions'), cropSubtitle=document.getElementById('cropSubtitle');
+  const TARGET_W=1600,TARGET_H=900; let coverFile=null, stagedBlocks=[], stagedAssets=[]; let cropQueue=[], cropResolve=null, cropImg=null, cropScale=1, cropX=0, cropY=0, drag=null;
+  const canvas=document.getElementById('cropCanvas'), ctx=canvas.getContext('2d'), zoom=document.getElementById('cropZoom');
   const preview=document.getElementById('publishPreview'), mini=document.getElementById('publishCoverMini'), blockList=document.getElementById('publishBlockList');
   const titleInput=document.querySelector('#publishDetailsForm [name=title]'), descInput=document.querySelector('#publishDetailsForm [name=description]'), categoryInput=document.querySelector('#publishDetailsForm [name=category]'), toolsInput=document.querySelector('#publishDetailsForm [name=tools]'), tagInput=document.getElementById('publishTagInput'), tagsValue=document.getElementById('publishTagsValue'), tagChips=document.getElementById('publishTagChips');
   let publishTags=[];
-
   function renderPublishTags(){ tagChips.innerHTML=publishTags.map((t,i)=>`<span class="publish-tag-chip">${esc(t)}<button type="button" data-remove-tag="${i}">×</button></span>`).join(''); tagsValue.value=publishTags.join(', '); tagChips.querySelectorAll('[data-remove-tag]').forEach(b=>b.onclick=()=>{publishTags.splice(Number(b.dataset.removeTag),1);renderPublishTags()}); }
   function addPublishTag(v){ const t=String(v||'').trim().replace(/^#/, ''); if(!t||publishTags.length>=10||publishTags.some(x=>x.toLowerCase()===t.toLowerCase())) return; publishTags.push(t.slice(0,40)); renderPublishTags(); tagInput.value=''; }
   tagInput?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','){e.preventDefault();addPublishTag(tagInput.value)}}); document.getElementById('addTagBtn')?.addEventListener('click',()=>addPublishTag(tagInput.value));
@@ -297,99 +255,18 @@ async function publishPage(){
   function updatePublishPreview(){ if(!mini)return; mini.innerHTML=coverFile?`<img src="${objectUrl(coverFile)}" alt="Project cover"><div class="publish-preview-overlay"><b>${esc(titleInput?.value.trim()||'Your project title')}</b><span>${esc(categoryInput?.value||'Project category')}</span></div>`:`<div class="publish-cover-empty"><span>＋</span><b>No cover selected</b><small>Choose a 16:9 image to preview it here.</small></div>`; }
   titleInput?.addEventListener('input',updatePublishPreview); categoryInput?.addEventListener('change',updatePublishPreview);
   const objectUrl=f=>URL.createObjectURL(f);
-
-  function updateCropTarget(){
-    if(cropMode==='cover'){
-      cropPresetInput.value='wide';
-      cropPresetInput.disabled=true;
-      cropTargetW=1600; cropTargetH=900;
-      cropSubtitle.textContent='Project cover is fixed to 1600 × 900. Drag and zoom to choose the exact visible area.';
-    }else{
-      cropPresetInput.disabled=false;
-      const p=CROP_PRESETS[cropPreset]||CROP_PRESETS.wide;
-      cropTargetW=cropMode==='half'?800:1600;
-      cropTargetH=Math.round(cropTargetW/p.ratio);
-      cropSubtitle.textContent='Choose how this image will appear, then drag and zoom the part you want.';
-    }
-    cropDimensions.textContent=`${cropTargetW} × ${cropTargetH} px`;
-    const previewW=800, previewH=Math.max(360,Math.round(previewW*(cropTargetH/cropTargetW)));
-    canvas.width=previewW; canvas.height=previewH;
-    canvas.style.aspectRatio=`${cropTargetW}/${cropTargetH}`;
-    redrawCrop();
-  }
-
-  function redrawCrop(){
-    if(!cropImg)return;
-    const cw=canvas.width,ch=canvas.height;
-    ctx.clearRect(0,0,cw,ch);
-    const base=Math.max(cw/cropImg.width,ch/cropImg.height);
-    const scale=base*cropScale;
-    const w=cropImg.width*scale,h=cropImg.height*scale;
-    const x=(cw-w)/2+cropX,y=(ch-h)/2+cropY;
-    ctx.drawImage(cropImg,x,y,w,h);
-    ctx.strokeStyle='rgba(255,255,255,.95)';ctx.lineWidth=2;ctx.strokeRect(1,1,cw-2,ch-2);
-  }
-
-  function openCrop(file, mode='content', defaultPreset='wide'){
-    return new Promise((resolve,reject)=>{
-      cropResolve={resolve,reject}; cropImg=new Image(); cropSourceName=file.name||'image';
-      cropMode=mode; cropPreset=defaultPreset;
-      cropImg.onload=()=>{
-        cropScale=1;zoom.value='1';cropX=0;cropY=0;
-        document.getElementById('cropModal').classList.add('open');
-        document.body.classList.add('modal-open');
-        updateCropTarget();
-      };
-      cropImg.onerror=()=>reject(new Error('Could not read image'));
-      cropImg.src=objectUrl(file);
-    });
-  }
-
-  function cropBlob(){
-    const out=document.createElement('canvas');out.width=cropTargetW;out.height=cropTargetH;
-    const c=out.getContext('2d');
-    const base=Math.max(cropTargetW/cropImg.width,cropTargetH/cropImg.height);
-    const scale=base*cropScale;
-    const w=cropImg.width*scale,h=cropImg.height*scale;
-    const sx=(cropTargetW-w)/2+cropX*(cropTargetW/canvas.width);
-    const sy=(cropTargetH-h)/2+cropY*(cropTargetH/canvas.height);
-    c.drawImage(cropImg,sx,sy,w,h);
-    return new Promise(r=>out.toBlob(b=>r(b),'image/jpeg',.92));
-  }
-
-  document.getElementById('cropPreset').onchange=e=>{
-    cropPreset=e.target.value; cropScale=1;zoom.value='1';cropX=0;cropY=0; updateCropTarget();
-  };
-  document.getElementById('cropApply').onclick=async()=>{
-    try{
-      const blob=await cropBlob();
-      if(!blob)throw new Error('Could not create crop');
-      const file=new File([blob],`${cropSourceName.replace(/\.[^.]+$/,'')}-crop.jpg`,{type:'image/jpeg'});
-      document.getElementById('cropModal').classList.remove('open');document.body.classList.remove('modal-open');
-      cropResolve?.resolve({file,width:cropTargetW,height:cropTargetH,preset:cropPreset});
-      cropResolve=null;
-    }catch(e){cropResolve?.reject(e);cropResolve=null;}
-  };
-  const cancelCrop=()=>{
-    document.getElementById('cropModal').classList.remove('open');document.body.classList.remove('modal-open');
-    cropResolve?.resolve(null);cropResolve=null;
-  };
-  document.getElementById('cropCancel').onclick=cancelCrop;document.getElementById('closeCrop').onclick=cancelCrop;
+  function redrawCrop(){ if(!cropImg)return; const cw=canvas.width,ch=canvas.height; ctx.clearRect(0,0,cw,ch); const base=Math.max(cw/cropImg.width,ch/cropImg.height); const scale=base*cropScale; const w=cropImg.width*scale,h=cropImg.height*scale; const x=(cw-w)/2+cropX,y=(ch-h)/2+cropY; ctx.drawImage(cropImg,x,y,w,h); ctx.strokeStyle='rgba(255,255,255,.95)';ctx.lineWidth=2;ctx.strokeRect(1,1,cw-2,ch-2); }
+  function openCrop(file){ return new Promise((resolve,reject)=>{ cropResolve={resolve,reject}; cropImg=new Image(); cropImg.onload=()=>{ cropScale=1;zoom.value='1';cropX=0;cropY=0;document.getElementById('cropModal').classList.add('open');redrawCrop(); }; cropImg.onerror=()=>reject(new Error('Could not read image')); cropImg.src=objectUrl(file); }); }
+  function cropBlob(){ const out=document.createElement('canvas');out.width=TARGET_W;out.height=TARGET_H;const c=out.getContext('2d');const base=Math.max(TARGET_W/cropImg.width,TARGET_H/cropImg.height),scale=base*cropScale;const w=cropImg.width*scale,h=cropImg.height*scale;const sx=(TARGET_W-w)/2+cropX*(TARGET_W/canvas.width),sy=(TARGET_H-h)/2+cropY*(TARGET_H/canvas.height);c.drawImage(cropImg,sx,sy,w,h);return new Promise(r=>out.toBlob(b=>r(b),'image/jpeg',.92)); }
+  async function runCrop(file){ return openCrop(file); }
+  document.getElementById('cropApply').onclick=async()=>{try{const blob=await cropBlob();const file=new File([blob],(cropImg.src.split('/').pop()||'image')+'.jpg',{type:'image/jpeg'});document.getElementById('cropModal').classList.remove('open');cropResolve?.resolve(file);}catch(e){cropResolve?.reject(e)}};
+  const cancelCrop=()=>{document.getElementById('cropModal').classList.remove('open');cropResolve?.resolve(null)};document.getElementById('cropCancel').onclick=cancelCrop;document.getElementById('closeCrop').onclick=cancelCrop;
   zoom.oninput=()=>{cropScale=Number(zoom.value);redrawCrop()};
-  canvas.onpointerdown=e=>{if(!cropImg)return;drag={x:e.clientX,y:e.clientY,px:cropX,py:cropY};canvas.setPointerCapture(e.pointerId)};
-  canvas.onpointermove=e=>{
-    if(!drag||!cropImg)return;
-    const base=Math.max(canvas.width/cropImg.width,canvas.height/cropImg.height),scale=base*cropScale,w=cropImg.width*scale,h=cropImg.height*scale;
-    const maxX=Math.max(0,(w-canvas.width)/2),maxY=Math.max(0,(h-canvas.height)/2);
-    cropX=Math.max(-maxX,Math.min(maxX,drag.px+(e.clientX-drag.x)));
-    cropY=Math.max(-maxY,Math.min(maxY,drag.py+(e.clientY-drag.y)));redrawCrop();
-  };
-  canvas.onpointerup=()=>drag=null;canvas.onpointercancel=()=>drag=null;
-
+  canvas.onpointerdown=e=>{drag={x:e.clientX,y:e.clientY,px:cropX,py:cropY};canvas.setPointerCapture(e.pointerId)};canvas.onpointermove=e=>{if(!drag)return;const base=Math.max(canvas.width/cropImg.width,canvas.height/cropImg.height),scale=base*cropScale,w=cropImg.width*scale,h=cropImg.height*scale;const maxX=Math.max(0,(w-canvas.width)/2),maxY=Math.max(0,(h-canvas.height)/2);cropX=Math.max(-maxX,Math.min(maxX,drag.px+(e.clientX-drag.x)));cropY=Math.max(-maxY,Math.min(maxY,drag.py+(e.clientY-drag.y)));redrawCrop()};canvas.onpointerup=()=>drag=null;canvas.onpointercancel=()=>drag=null;
   function blockPreviewHtml(b){
     const gap=Number(b.gap||0);
     const style=gap?` style="margin-top:${gap}px"`:'';
-    if(b.kind==='image') return `<div class="publish-editor-block ${b.layout==='half'?'publish-layout-half':''}" data-preview-block="${esc(b.id||'')}"><img src="${objectUrl(b.file)}" alt=""><span>${b.layout==='half'?'Half width · ':''}Image · crop on publish</span></div>`;
+    if(b.kind==='image') return `<div class="publish-editor-block ${b.layout==='half'?'publish-layout-half':''}" data-preview-block="${esc(b.id||'')}"><img src="${objectUrl(b.file)}" alt=""><span>${b.layout==='half'?'Half width · ':''}Image · 1600 × 900</span></div>`;
     if(b.kind==='text') return `<div class="publish-editor-text" style="margin-top:${gap}px">${esc(b.content).replace(/\n/g,'<br>')}</div>`;
     if(b.kind==='video') return `<div class="publish-editor-block" style="margin-top:${gap}px"><video src="${objectUrl(b.file)}" controls></video><span>Video / Audio</span></div>`;
     if(b.kind==='audio') return `<div class="publish-editor-audio" style="margin-top:${gap}px"><b>Audio</b><audio src="${objectUrl(b.file)}" controls></audio></div>`;
@@ -411,7 +288,7 @@ async function publishPage(){
     }
     preview.innerHTML=(coverHtml||blocksHtml)?`${coverHtml}${blocksHtml}`:`<div class="publish-placeholder-icon">＋</div><h2>Start building your project</h2><p>Choose a main cover image, then add as many images and blocks as you want.</p><button class="publish-big-action" id="chooseCoverBtn2" type="button">▧ <span>Main cover image</span></button><small class="publish-size-note">Required cover: 1600 × 900 · 16:9</small>`;
     document.getElementById('chooseCoverBtn2')?.addEventListener('click',()=>document.getElementById('publishCoverFile').click());
-    document.getElementById('recropCover')?.addEventListener('click',()=>document.getElementById('publishCoverFile').click());
+    document.getElementById('recropCover')?.addEventListener('click',async()=>{const f=await runCrop(coverFile);if(f){coverFile=f;renderStaged();}});
     updatePublishPreview();
     const coverStatus=document.getElementById('publishCoverStatus');
     if(coverStatus) coverStatus.innerHTML=coverFile?`<span class="cover-ok">✓ Cover selected</span> · 1600 × 900`:'No cover selected yet.';
@@ -438,8 +315,8 @@ async function publishPage(){
     document.getElementById('assetList').innerHTML=stagedAssets.map((f,i)=>`<div class="publish-asset-row"><span>📎</span><span>${esc(f.name)}</span><button type="button" class="icon-btn danger" data-remove-asset="${i}">✕</button></div>`).join('');
     document.querySelectorAll('[data-remove-asset]').forEach(b=>b.onclick=()=>{stagedAssets.splice(Number(b.dataset.removeAsset),1);renderStaged()});
   }
-  async function addImages(files){ for(const file of files){if(file.size>31457280){notify(`${file.name} is larger than 30MB.`);continue;} stagedBlocks.push({kind:'image',label:'Image',name:file.name,file,layout:'full',gap:16});}renderStaged(); }
-  async function addCover(file){if(!file)return;if(file.size>31457280){notify('Cover is larger than 30MB.');return;}coverFile=file;renderStaged();}
+  async function addImages(files){ for(const file of files){if(file.size>31457280){notify(`${file.name} is larger than 30MB.`);continue;} const cropped=await runCrop(file);if(cropped)stagedBlocks.push({kind:'image',label:'Image',name:file.name,file:cropped,layout:'full',gap:16});}renderStaged(); }
+  async function addCover(file){if(!file)return;if(file.size>31457280){notify('Cover is larger than 30MB.');return;}const cropped=await runCrop(file);if(cropped){coverFile=cropped;renderStaged();}}
   document.getElementById('chooseCoverBtn').onclick=()=>document.getElementById('publishCoverFile').click();document.getElementById('publishCoverFile').onchange=e=>{addCover(e.target.files?.[0]);e.target.value=''};
   document.getElementById('publishImageFiles').onchange=e=>{addImages([...e.target.files||[]]);e.target.value=''};
   document.getElementById('publishVideoFile').onchange=e=>{const f=e.target.files?.[0];if(f)stagedBlocks.push({kind:f.type.startsWith('audio/')?'audio':'video',label:f.type.startsWith('audio/')?'Audio':'Video / Audio',name:f.name,file:f,gap:16});renderStaged();e.target.value=''};
@@ -458,66 +335,7 @@ async function publishPage(){
   document.getElementById('closePublishDetails').onclick=()=>document.getElementById('publishDetailsModal').classList.remove('open');
   document.getElementById('publishDetailsModal').onclick=e=>{if(e.target.id==='publishDetailsModal')e.target.classList.remove('open')};
   async function uploadFileForWork(workId,file,mediaId){const ext=(file.name.split('.').pop()||'jpg').toLowerCase();const up=await cloudCall('work-upload-url',{workId,mediaId,ext});const {error}=await window.__ARAB_SB.storage.from('works').uploadToSignedUrl(up.path,up.token,file);if(error)throw error;return {path:up.path,url:window.__ARAB_SB.storage.from('works').getPublicUrl(up.path).data.publicUrl};}
-  document.getElementById('publishDetailsForm').onsubmit=async e=>{
-    e.preventDefault();
-    const fd=new FormData(e.target),btn=document.getElementById('confirmPublishBtn');
-    if(!coverFile){notify('Please choose a project cover first.');document.getElementById('choosePublishCoverBtn')?.focus();return}
-    const title=String(fd.get('title')||'').trim();
-    if(!title){notify('Please enter a project title.');return}
-    if(!String(fd.get('category')||'')){notify('Please choose a category.');categoryInput.focus();return}
-    btn.disabled=true;
-    try{
-      /* Crop everything only after the user presses Publish.
-         Nothing is uploaded/created until every requested crop is confirmed. */
-      btn.textContent='Crop cover…';
-      const coverCrop=await openCrop(coverFile,'cover','wide');
-      if(!coverCrop){btn.disabled=false;btn.textContent='Publish Work ↗';return}
-
-      const imageBlocks=stagedBlocks.filter(b=>b.file&&b.kind==='image');
-      const croppedBlocks=new Map();
-      for(let n=0;n<imageBlocks.length;n++){
-        const b=imageBlocks[n];
-        btn.textContent=`Crop image ${n+1} of ${imageBlocks.length}…`;
-        const cropped=await openCrop(b.file,b.layout==='half'?'half':'full',b.cropPreset||'wide');
-        if(!cropped)throw new Error('Publishing cancelled before all images were cropped.');
-        croppedBlocks.set(b,cropped);
-      }
-
-      btn.textContent='Uploading cover…';
-      const workId=uid();
-      const cover=await uploadFileForWork(workId,coverCrop.file,'cover');
-      btn.textContent='Creating project…';
-      await cloudCall('create-work',{workId,mediaType:'image',mediaUrl:cover.url,mediaLabel:'Image',storagePath:cover.path,title:fd.get('title'),description:fd.get('description'),category:fd.get('category'),tags:publishTags,tools:fd.get('tools')});
-
-      let contentNumber=0;
-      for(let i=0;i<stagedBlocks.length;i++){
-        const b=stagedBlocks[i];
-        contentNumber++;
-        if(b.file && b.kind==='image'){
-          const cropped=croppedBlocks.get(b);
-          btn.textContent=`Uploading image ${contentNumber} of ${stagedBlocks.length}…`;
-          const up=await uploadFileForWork(workId,cropped.file,`block-${i}`);
-          await cloudCall('create-work-block',{workId,blockType:'image',mediaUrl:up.url,storagePath:up.path,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});
-        }else if(b.kind==='text'){
-          btn.textContent=`Publishing content ${contentNumber} of ${stagedBlocks.length}…`;
-          await cloudCall('create-work-block',{workId,blockType:'text',content:b.content,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});
-        }else if(b.file){
-          btn.textContent=`Uploading content ${contentNumber} of ${stagedBlocks.length}…`;
-          const up=await uploadFileForWork(workId,b.file,`block-${i}`);
-          await cloudCall('create-work-block',{workId,blockType:b.kind==='audio'?'audio':'video',mediaUrl:up.url,storagePath:up.path,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});
-        }else if(b.url){
-          btn.textContent=`Publishing content ${contentNumber} of ${stagedBlocks.length}…`;
-          await cloudCall('create-work-block',{workId,blockType:'embed',mediaUrl:b.url,content:b.content||'',caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});
-        }
-      }
-      notify('Work published successfully.');
-      location.href=`/profile/${encodeURIComponent(me.username)}#works`;
-    }catch(err){
-      notify(err.message||'Could not publish work.');
-      btn.disabled=false;btn.textContent='Publish Work ↗';
-    }
-  };
-
+  document.getElementById('publishDetailsForm').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target),btn=document.getElementById('confirmPublishBtn');if(!coverFile){notify('Please choose a project cover first.');document.getElementById('choosePublishCoverBtn')?.focus();return}const title=String(fd.get('title')||'').trim();if(!title){notify('Please enter a project title.');return}if(!String(fd.get('category')||'')){notify('Please choose a category.');categoryInput.focus();return}btn.disabled=true;btn.textContent='Publishing…';try{const workId=uid();const cover=await uploadFileForWork(workId,coverFile,'cover');const r=await cloudCall('create-work',{workId,mediaType:'image',mediaUrl:cover.url,mediaLabel:'Image',storagePath:cover.path,title:fd.get('title'),description:fd.get('description'),category:fd.get('category'),tags:publishTags,tools:fd.get('tools')});for(let i=0;i<stagedBlocks.length;i++){const b=stagedBlocks[i];if(b.file){const up=await uploadFileForWork(workId,b.file,`block-${i}`);await cloudCall('create-work-block',{workId,blockType:b.kind==='audio'?'audio':(b.kind==='video'?'video':'image'),mediaUrl:up.url,storagePath:up.path,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}else if(b.kind==='text'){await cloudCall('create-work-block',{workId,blockType:'text',content:b.content,caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}else if(b.url){await cloudCall('create-work-block',{workId,blockType:'embed',mediaUrl:b.url,content:b.content||'',caption:b.label,layout:b.layout||'full',gap:Number(b.gap||0)});}}notify('Work published successfully.');location.href=`/profile/${encodeURIComponent(me.username)}#works`;}catch(err){notify(err.message||'Could not publish work.');btn.disabled=false;btn.textContent='Publish work ↗'}};
 }
 
 function worksPage(){
@@ -529,7 +347,6 @@ function worksPage(){
   all.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
   shell(`<section class="works-page-head"><div><div class="section-label">THE WORKS</div><h1>Work worth<br><span>being seen.</span></h1><p>Explore the latest projects published by designers across Arab Designers.</p></div>${me?`<a class="btn primary xl" href="/publish">+ Publish work</a>`:''}</section>
   <section class="section"><div class="works-grid works-feed" id="worksGrid">${all.length?all.map(w=>`<div class="work-feed-item"><div class="work-feed-author"><img src="${esc(safeImage(w.designer.avatar))}" alt=""><div><a href="/profile/${encodeURIComponent(w.designer.username)}">${esc(w.designer.display_name||w.designer.username)}</a><span>@${esc(w.designer.username)}</span></div></div>${workCard(w,false)}</div>`).join(''):`<div class="empty-state wide"><span>✦</span><h3>No published work yet</h3><p>Designers can publish their first project from their profile.</p></div>`}</div></section>`);
-  app.insertAdjacentHTML('beforeend',modalsMarkup(false));
   document.querySelectorAll('[data-open-work]').forEach(b=>b.onclick=()=>openWorkViewer(b.dataset.openWork));
   document.querySelectorAll('[data-like-work]').forEach(b=>b.onclick=async(e)=>{
     e.stopPropagation(); const w=findWork(b.dataset.likeWork); if(!w)return;
@@ -537,62 +354,11 @@ function worksPage(){
     const liked=!cloudState.likedWorks?.has(w.id);
     try{const r=await cloudCall('like-work',{workId:w.id,liked});w.likes=r.likes;if(liked)cloudState.likedWorks.add(w.id);else cloudState.likedWorks.delete(w.id);document.querySelectorAll(`[data-like-work="${w.id}"]`).forEach(el=>{el.innerHTML=`${liked?'♥':'♡'} <span>${formatNumber(w.likes)}</span>`;el.classList.toggle('liked',liked)})}catch(err){notify(err.message||'Could not update like.')}
   });
-  const closeWorkViewer=()=>{document.getElementById('workViewer')?.classList.remove('open');document.body.classList.remove('modal-open');};
-  document.getElementById('closeWorkViewer')?.addEventListener('click',closeWorkViewer);
-  document.getElementById('workViewer')?.addEventListener('click',e=>{if(e.target.id==='workViewer')closeWorkViewer()});
-  if(!window.__workViewerEscBound){ window.__workViewerEscBound=true; document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('workViewer')?.classList.contains('open')){document.getElementById('workViewer')?.classList.remove('open');document.body.classList.remove('modal-open');}}); }
+  document.getElementById('closeWorkViewer')?.addEventListener('click',()=>document.getElementById('workViewer')?.classList.remove('open'));
+  document.getElementById('workViewer')?.addEventListener('click',e=>{if(e.target.id==='workViewer')e.target.classList.remove('open')});
+  app.insertAdjacentHTML('beforeend',modalsMarkup(false));
   if(all.length)refreshLikedWorks(all.map(w=>w.id));
 }
-
-async function workPage(username, workId){
-  try{await loadCloudState();}catch(e){console.warn('Cloud unavailable:',e);}
-  const profiles=readProfiles();
-  const d=profiles[username] || Object.values(profiles).find(x=>x.username===username);
-  const profileId=d?.id;
-  let w=profileId ? (cloudState.works?.[profileId]||[]).find(x=>String(x.id)===String(workId)) : null;
-  if(!w){
-    for(const list of Object.values(cloudState.works||{})){ const hit=list.find(x=>String(x.id)===String(workId)); if(hit){w=hit;break;} }
-  }
-  if(!w){
-    shell(`<main class="auth-page"><section class="auth-card"><div class="section-label">PROJECT NOT FOUND</div><h1>This project is unavailable.</h1><p>The project may have been deleted or the link is incorrect.</p><a class="btn primary xl" href="/works">Back to works ↗</a></section></main>`);
-    return;
-  }
-  const designer=d || Object.values(profiles).find(x=>x.id===w.profileId) || {username,display_name:username,avatar:'',banner:''};
-  w.designerUsername=designer.username||username;
-  document.title=`${w.title||'Project'} - ${designer.display_name||designer.username||'Arab Designers'}`;
-  setMeta('description',`${w.title||'Project'} by ${designer.display_name||designer.username||'Arab Designers'}`);
-  setMeta('og:title',`${w.title||'Project'} - ${designer.display_name||designer.username||'Arab Designers'}`,true);
-  setMeta('og:description',w.description||`Project by ${designer.display_name||designer.username||'Arab Designers'}`,true);
-  setMeta('og:type','article',true);
-  setMeta('og:image',w.mediaUrl||BANNER,true);
-  setMeta('og:url',location.href,true);
-  setMeta('twitter:title',`${w.title||'Project'} - ${designer.display_name||designer.username||'Arab Designers'}`);
-  setMeta('twitter:description',w.description||`Project by ${designer.display_name||designer.username||'Arab Designers'}`);
-  setMeta('twitter:image',w.mediaUrl||BANNER);
-  shell(`<section class="project-page">
-    <div class="project-breadcrumb"><a href="/profile/${encodeURIComponent(designer.username||username)}">${esc(designer.display_name||designer.username||username)}</a><span>/</span><span>Project</span></div>
-    <header class="project-header"><div><div class="section-label">PROJECT</div><h1>${esc(w.title||'Untitled project')}</h1><p>${esc(w.description||'')}</p></div><div class="project-meta"><span>👁 <b id="projectViews">${formatNumber(w.views||0)}</b> views</span><span>${esc(designer.display_name||designer.username||username)}</span></div></header>
-    <div class="project-primary">${renderWorkMedia(w)}</div>
-    <div class="project-blocks" id="projectBlocks"><p class="form-note">Loading project…</p></div>
-  </section>`);
-  cloudCall('view-work',{workId:w.id}).then(r=>{if(typeof r.views==='number'){w.views=r.views;const el=document.getElementById('projectViews');if(el)el.textContent=formatNumber(r.views);}}).catch(()=>{});
-  try{
-    const r=await cloudCall('list-work-blocks',{workId:w.id}); const blocks=r.blocks||[]; let html='';
-    for(let i=0;i<blocks.length;i++){
-      const b=blocks[i],gap=Math.max(0,Number(b.gap||0));
-      if(b.block_type==='image'&&b.layout==='half'){
-        const row=[];while(i<blocks.length&&blocks[i].block_type==='image'&&blocks[i].layout==='half'){row.push(blocks[i]);i++;}i--;
-        html+=`<div class="work-image-row" style="margin-top:${gap}px">${row.map(x=>`<figure class="work-block-image"><img src="${esc(x.media_url)}" alt=""><figcaption>${esc(x.caption||'')}</figcaption></figure>`).join('')}</div>`;
-      }else if(b.block_type==='text') html+=`<div class="work-block-text" style="margin-top:${gap}px">${esc(b.content||'').replace(/\n/g,'<br>')}</div>`;
-      else if(b.block_type==='image') html+=`<figure class="work-block-image" style="margin-top:${gap}px"><img src="${esc(b.media_url)}" alt=""><figcaption>${esc(b.caption||'')}</figcaption></figure>`;
-      else if(b.block_type==='video') html+=`<div class="work-block-video" style="margin-top:${gap}px"><video src="${esc(b.media_url)}" controls playsinline></video></div>`;
-      else if(b.block_type==='audio') html+=`<div class="work-block-embed" style="margin-top:${gap}px"><div class="form-note">Audio</div><audio src="${esc(b.media_url)}" controls style="width:100%"></audio></div>`;
-      else html+=`<div class="work-block-embed" style="margin-top:${gap}px"><div class="form-note">${esc(b.caption||'Embed')}</div><a class="btn" href="${esc(b.media_url)}" target="_blank" rel="noopener">Open content ↗</a></div>`;
-    }
-    document.getElementById('projectBlocks').innerHTML=html||'';
-  }catch(e){document.getElementById('projectBlocks').innerHTML='';}
-}
-
 async function messagesPage(){
   if(!me){ location.href='/login.html'; return; }
   shell(`<section class="messages-page"><div class="messages-head"><div><div class="section-label">MESSAGES</div><h1>Your conversations.</h1></div><span class="messages-live">LIVE</span></div><div class="messenger" id="messenger"><aside class="conversation-list" id="conversationList"><div class="conversation-empty">Loading conversations…</div></aside><section class="chat-pane" id="chatPane"><div class="chat-empty">Select a designer to start chatting.</div></section></div></section>`);
@@ -820,8 +586,18 @@ function setMeta(name, content, property=false){
 }
 function setProfileMeta(d, username){
   const title='Arab Designers - Profile';
-  const desc=`${d?.bio||'Designer profile, selected work and creative direction.'}`.replace(/\s+/g,' ').slice(0,160);
-  document.title=title; setMeta('description',desc); setMeta('og:title',title,true); setMeta('og:description',desc,true); setMeta('og:site_name','Arab Designers',true); setMeta('og:image',profileBanner(d)||BANNER,true); setMeta('twitter:title',title); setMeta('twitter:description',desc); setMeta('twitter:image',profileBanner(d)||BANNER);
+  const desc='Arab Designers - designer profile, selected work and creative portfolio.';
+  const shareImage='https://i.postimg.cc/TY4WQrHN/fffac.png';
+  document.title=title;
+  setMeta('description',desc);
+  setMeta('og:title',title,true);
+  setMeta('og:description',desc,true);
+  setMeta('og:site_name','Arab Designers',true);
+  setMeta('og:image',shareImage,true);
+  setMeta('og:type','profile',true);
+  setMeta('twitter:title',title);
+  setMeta('twitter:description',desc);
+  setMeta('twitter:image',shareImage);
 }
 
 // ---- Portfolio work: cards, viewer modal, upload modal ----
@@ -840,7 +616,6 @@ function workCard(w,editable){
     <div class="work-foot">
       <span class="work-stat" title="Views">👁 ${formatNumber(w.views)}</span>
       <button class="work-like ${liked?'liked':''}" data-like-work="${esc(w.id)}" type="button">${liked?'♥':'♡'} <span>${formatNumber(w.likes)}</span></button>
-      <a class="work-share-link" href="/works/${encodeURIComponent(w.designerUsername||w.username||'designer')}/${encodeURIComponent(w.id)}" target="_self" aria-label="Open project page" title="Open project page">↗</a>
       ${editable?`<span class="work-edit-actions"><button class="icon-btn" data-move-work="${esc(w.id)}" data-dir="up" type="button" title="Move up">↑</button><button class="icon-btn" data-move-work="${esc(w.id)}" data-dir="down" type="button" title="Move down">↓</button><button class="icon-btn danger" data-delete-work="${esc(w.id)}" type="button" title="Delete">✕</button></span>`:''}
     </div>
   </div>`;
@@ -851,7 +626,7 @@ function worksSection(profileId,same,displayName){
 }
 function modalsMarkup(same){
   return `<div class="modal-overlay" id="workViewer"><div class="modal-card wide">
-    <div class="modal-head"><h3 id="workViewerTitle"></h3><button class="icon-btn" id="closeWorkViewer" type="button" onclick="window.closeWorkViewerModal && window.closeWorkViewerModal()" aria-label="Close project">✕</button></div>
+    <div class="modal-head"><h3 id="workViewerTitle"></h3><button class="icon-btn" id="closeWorkViewer" type="button">✕</button></div>
     <div class="work-viewer-media" id="workViewerMedia"></div>
     <p class="work-viewer-desc" id="workViewerDesc"></p>
     <div class="work-viewer-stats"><span id="workViewerViews"></span><button class="work-like lg" id="workViewerLike" type="button"></button></div>
@@ -939,14 +714,8 @@ async function openWorkViewer(workId){
   };
   const list=document.getElementById('commentsList');
   list.innerHTML='<p class="form-note">Loading comments…</p>';
-  modal.classList.add('open'); document.body.classList.add('modal-open');
-  cloudCall('view-work',{workId:w.id}).then(r=>{
-    if(typeof r.views==='number'){
-      w.views=r.views;
-      document.getElementById('workViewerViews').textContent=`👁 ${formatNumber(w.views)} views`;
-      document.querySelectorAll(`.work-card[data-work-id="${CSS.escape(String(w.id))}"] .work-stat`).forEach(el=>el.textContent=`👁 ${formatNumber(w.views)}`);
-    }
-  }).catch(()=>{});
+  modal.classList.add('open');
+  cloudCall('view-work',{workId:w.id}).then(r=>{ if(typeof r.views==='number'){w.views=r.views; document.getElementById('workViewerViews').textContent=`👁 ${formatNumber(w.views)} views`;} }).catch(()=>{});
   try{
     const comments=await cloudJson(`${SUPABASE_URL}/rest/v1/work_comments?select=*&work_id=eq.${encodeURIComponent(w.id)}&order=created_at.asc`);
     list.innerHTML=comments.length?comments.map(commentRow).join(''):'<p class="form-note">No comments yet.</p>';
@@ -992,10 +761,8 @@ function wireWorks(profileId,same,displayName){
       document.querySelectorAll(`[data-like-work="${workId}"]`).forEach(el=>{el.innerHTML=`${liked?'♥':'♡'} <span>${formatNumber(w.likes)}</span>`;el.classList.toggle('liked',liked);});
     }catch(err){notify(err.message||'Could not update like.')}
   });
-  const closeWorkViewer=()=>{document.getElementById('workViewer')?.classList.remove('open');document.body.classList.remove('modal-open');};
-  document.getElementById('closeWorkViewer')?.addEventListener('click',closeWorkViewer);
-  document.getElementById('workViewer')?.addEventListener('click',e=>{ if(e.target.id==='workViewer') closeWorkViewer(); });
-  if(!window.__workViewerEscBound){ window.__workViewerEscBound=true; document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('workViewer')?.classList.contains('open')){document.getElementById('workViewer')?.classList.remove('open');document.body.classList.remove('modal-open');}}); }
+  document.getElementById('closeWorkViewer')?.addEventListener('click',()=>document.getElementById('workViewer')?.classList.remove('open'));
+  document.getElementById('workViewer')?.addEventListener('click',e=>{ if(e.target.id==='workViewer') e.target.classList.remove('open'); });
   if(!same)return;
   const addBtn=document.getElementById('addWorkBtn');
   const addModal=document.getElementById('addWorkModal');
@@ -1028,7 +795,7 @@ function wireWorks(profileId,same,displayName){
       }
       const r=await cloudCall('create-work',{...payload,title:fd.get('title'),description:fd.get('description'),category:fd.get('category'),tags:publishTags,tools:fd.get('tools')});
       const w=r.work;
-      (cloudState.works[profileId] ||= []).push({id:w.id,profileId:w.profile_id,title:w.title,description:w.description||'',mediaUrl:w.media_url,mediaType:w.media_type,mediaLabel:w.media_label,storagePath:w.storage_path,views:w.views||0,likes:w.likes||0,createdAt:w.created_at,designerUsername:(map[profileId]?.username)||undefined});
+      (cloudState.works[profileId] ||= []).push({id:w.id,profileId:w.profile_id,title:w.title,description:w.description||'',mediaUrl:w.media_url,mediaType:w.media_type,mediaLabel:w.media_label,storagePath:w.storage_path,views:w.views||0,likes:w.likes||0,createdAt:w.created_at});
       notify('Work published.');
       addModal.classList.remove('open'); form.reset();
       await profile(me.username);
@@ -1138,7 +905,7 @@ async function loadCloudState(force=false){
   });
   const worksByProfile={};
   (works||[]).forEach(w=>{
-    (worksByProfile[w.profile_id] ||= []).push({id:w.id,profileId:w.profile_id,title:w.title,description:w.description||'',mediaUrl:w.media_url,mediaType:w.media_type,mediaLabel:w.media_label,storagePath:w.storage_path,views:w.views||0,likes:w.likes||0,createdAt:w.created_at,designerUsername:map[w.profile_id]?.username||undefined});
+    (worksByProfile[w.profile_id] ||= []).push({id:w.id,profileId:w.profile_id,title:w.title,description:w.description||'',mediaUrl:w.media_url,mediaType:w.media_type,mediaLabel:w.media_label,storagePath:w.storage_path,views:w.views||0,likes:w.likes||0,createdAt:w.created_at});
   });
   cloudState={profiles:map,works:worksByProfile,likedWorks:cloudState.likedWorks||new Set()};
   cloudLoaded=true;return cloudState;
@@ -1264,6 +1031,10 @@ if(CLOUD_CONFIGURED && window.supabase?.createClient){window.__ARAB_SB=window.su
 async function route(){
   if(await handleOAuth())return;
   const p=location.pathname.replace(/\/+$/,'')||'/';
+  const shareProfile=new URLSearchParams(location.search).get('profile');
+  if(shareProfile && (p==='/'||p==='/index.html'||p==='/home'||p==='/home.html')){
+    return await profile(decodeURIComponent(shareProfile.trim()));
+  }
   if(p==='/'||p==='/index.html'||p==='/home'||p==='/home.html')return await home();
   if(p==='/login'||p==='/login.html')return login();
   if(p==='/about'||p==='/about.html')return about();
@@ -1274,7 +1045,6 @@ async function route(){
   if(p==='/contact'||p==='/contact.html')return contact();
   if(p==='/settings'||p==='/settings.html')return await settings();
   if(p==='/admin'||p==='/admin.html')return await adminPage();
-  if(p.startsWith('/works/')){const parts=p.split('/').filter(Boolean);if(parts.length>=3)return await workPage(decodeURIComponent(parts[1]),decodeURIComponent(parts[2]));}
   if(p.startsWith('/profile/'))return await profile(decodeURIComponent(p.split('/').slice(2).join('/')));
   return await home();
 }
