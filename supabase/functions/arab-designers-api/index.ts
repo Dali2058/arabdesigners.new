@@ -345,6 +345,24 @@ async function handle(req: Request) {
     return json({ work: data })
   }
 
+  if (action === 'admin-list-works') {
+    if (user.username !== ADMIN_USERNAME) return json({ error: 'Admin only' }, 403)
+    const { data, error } = await admin.from('works')
+      .select('id,profile_id,title,description,category,tags,tools,media_url,media_type,media_label,storage_path,views,likes,position,created_at')
+      .order('created_at', { ascending: false })
+      .limit(500)
+    if (error) throw error
+    const ids = [...new Set((data || []).map((w: any) => w.profile_id).filter(Boolean))]
+    let profiles: any[] = []
+    if (ids.length) {
+      const r = await admin.from('profiles').select('id,username,display_name,avatar').in('id', ids)
+      if (r.error) throw r.error
+      profiles = r.data || []
+    }
+    const pm = Object.fromEntries(profiles.map((p: any) => [p.id, p]))
+    return json({ works: (data || []).map((w: any) => ({ ...w, profile: pm[w.profile_id] || null })) })
+  }
+
   if (action === 'delete-work') {
     const workId = String(body.workId || '')
     const { data: w, error: fe } = await admin.from('works').select('profile_id,storage_path').eq('id', workId).single()

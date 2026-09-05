@@ -918,9 +918,32 @@ async function adminPage(){
   try{await loadCloudState(true);}catch(e){console.warn('Cloud unavailable:',e);}
   const profiles=readProfiles();
   const rows=Object.values(profiles).map(p=>`<div class="admin-row admin-row-card"><div class="admin-user"><img src="${esc(safeImage(p.avatar))}" alt=""><div><strong>${esc(p.display_name||p.username)}</strong><span>@${esc(p.username)}</span></div></div><div class="admin-badges">${renderBadges(p)}</div><div class="admin-actions"><button class="icon-btn" data-verify-user="${esc(p.username)}">${p.verified?'Unverify':'Verify'}</button><button class="icon-btn" data-staff-user="${esc(p.username)}">${p.role==='staff'?'Remove staff':'Make staff'}</button>${TOGGLEABLE_BADGES.map(b=>`<button class="icon-btn" data-badge-user="${esc(p.username)}" data-badge-type="${b}">${hasBadge(p,b)?`Remove ${BADGE_META[b].label}`:`Give ${BADGE_META[b].label}`}</button>`).join('')}</div></div>`).join('');
-  shell(`<section class="settings-head admin-page-head"><div><div class="section-label">ADMIN CONTROL</div><h1>Manage the<br><span>community.</span></h1><p>Verify designers and manage Staff badges from the admin account.</p></div><div class="settings-head-actions"><a class="btn" href="/designers">View directory ↗</a><a class="btn" href="/settings">Settings</a></div></section><section class="section admin-dashboard"><div class="admin-dashboard-head"><div><b>${Object.keys(profiles).length}</b><span>registered profiles</span></div><span class="settings-live">ADMIN · i.ixi.</span></div><div class="admin-list">${rows||'<p class="form-note">No designer accounts have joined yet.</p>'}</div></section>`);
+  shell(`<section class="settings-head admin-page-head"><div><div class="section-label">ADMIN CONTROL</div><h1>Manage the<br><span>community.</span></h1><p>Verify designers, manage badges, and remove published projects from the admin account.</p></div><div class="settings-head-actions"><a class="btn" href="/designers">View directory ↗</a><a class="btn" href="/settings">Settings</a></div></section><section class="section admin-dashboard"><div class="admin-dashboard-head"><div><b>${Object.keys(profiles).length}</b><span>registered profiles</span></div><span class="settings-live">ADMIN · i.ixi.</span></div><div class="admin-list">${rows||'<p class="form-note">No designer accounts have joined yet.</p>'}</div></section><section class="section admin-dashboard admin-works-section"><div class="admin-dashboard-head"><div><b id="adminWorksCount">—</b><span>published projects</span></div><button class="btn" id="adminRefreshWorks" type="button">Refresh projects</button></div><div class="admin-works-list" id="adminWorksList"><p class="form-note">Loading projects…</p></div></section>`);
   document.querySelectorAll('[data-verify-user],[data-staff-user]').forEach(b=>b.onclick=async()=>{const username=b.dataset.verifyUser||b.dataset.staffUser;const p=profiles[username];const action=b.dataset.verifyUser?'set-verification':'set-staff';try{const r=await cloudCall(action,{username,enabled:b.dataset.verifyUser? !p.verified : p.role!=='staff'});notify(r.message||'Updated');await adminPage();}catch(e){notify(e.message||'Admin action failed')}});
   document.querySelectorAll('[data-badge-user]').forEach(b=>b.onclick=async()=>{const username=b.dataset.badgeUser;const type=b.dataset.badgeType;const p=profiles[username];try{const r=await cloudCall('set-badge',{username,badge:type,enabled:!hasBadge(p,type)});notify(r.message||'Updated');await adminPage();}catch(e){notify(e.message||'Admin action failed')}});
+
+  async function loadAdminWorks(){
+    const list=document.getElementById('adminWorksList'), count=document.getElementById('adminWorksCount');
+    if(!list)return; list.innerHTML='<p class="form-note">Loading projects…</p>';
+    try{
+      const r=await cloudCall('admin-list-works'); const works=r.works||[];
+      if(count)count.textContent=works.length;
+      list.innerHTML=works.length?works.map(w=>{
+        const p=w.profile||{};
+        const thumb=w.media_type==='video'?`<video src="${esc(w.media_url)}" muted playsinline preload="metadata"></video>`:`<img src="${esc(w.media_url||FALLBACK_LOGO)}" alt="">`;
+        return `<article class="admin-work-row" data-admin-work="${esc(w.id)}"><div class="admin-work-thumb">${thumb}</div><div class="admin-work-info"><strong>${esc(w.title||'Untitled project')}</strong><span>${esc(p.display_name||p.username||'Unknown designer')} · ${esc(w.category||'Uncategorized')}</span><small>${timeAgo(new Date(w.created_at).getTime())} · ${formatNumber(w.views||0)} views · ${formatNumber(w.likes||0)} likes</small></div><button class="icon-btn danger" type="button" data-admin-delete-work="${esc(w.id)}" title="Delete project">Delete</button></article>`;
+      }).join(''):'<p class="form-note">No published projects yet.</p>';
+      list.querySelectorAll('[data-admin-delete-work]').forEach(btn=>btn.onclick=async()=>{
+        const row=btn.closest('[data-admin-work]'), title=row?.querySelector('.admin-work-info strong')?.textContent||'this project';
+        if(!confirm(`Delete “${title}” permanently? This removes its content and uploaded files.`))return;
+        btn.disabled=true; btn.textContent='Deleting…';
+        try{await cloudCall('delete-work',{workId:btn.dataset.adminDeleteWork});notify('Project deleted.');await loadAdminWorks();await refreshAfterMutation();}
+        catch(e){btn.disabled=false;btn.textContent='Delete';notify(e.message||'Could not delete project.')}
+      });
+    }catch(e){list.innerHTML=`<div class="error-box"><strong>Could not load projects</strong><code>${esc(e.message||e)}</code></div>`}
+  }
+  document.getElementById('adminRefreshWorks')?.addEventListener('click',loadAdminWorks);
+  loadAdminWorks();
 }
 
 async function settings(){
