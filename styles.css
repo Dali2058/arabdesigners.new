@@ -210,8 +210,8 @@ body:before{background:radial-gradient(circle at 50% -20%,rgba(63,111,255,.16),t
 
 /* v24 Behance-style block layout editor */
 .publish-block-row{cursor:grab;user-select:none}.publish-block-row.dragging{opacity:.45;transform:scale(.99)}.publish-drag{font-size:18px;color:#999;cursor:grab;line-height:1}.publish-layout,.publish-gap{height:28px;border:1px solid #ddd;border-radius:6px;background:#fff;color:#333;font-size:9px;padding:0 4px}.publish-layout{width:62px}.publish-gap{width:58px}.publish-block-row .icon-btn{flex:0 0 auto}
-.publish-image-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;background:#fff}.publish-image-row .publish-editor-block{margin:0}.publish-image-row .publish-editor-block img{aspect-ratio:16/9;object-fit:cover}
-.publish-editor-block{overflow:hidden}.publish-editor-block img,.publish-editor-block video{aspect-ratio:16/9;object-fit:cover}
+.publish-image-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;background:#fff}.publish-image-row .publish-editor-block{margin:0}.publish-image-row .publish-editor-block img{aspect-ratio:auto;object-fit:contain}
+.publish-editor-block{overflow:hidden}.publish-editor-block img,.publish-editor-block video{aspect-ratio:auto;object-fit:contain}
 @media(max-width:700px){.publish-block-row{flex-wrap:wrap}.publish-block-name{min-width:90px}.publish-image-row{grid-template-columns:1fr}}
 .work-image-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.work-image-row .work-block-image{margin:0}.work-image-row .work-block-image img{width:100%;height:auto;aspect-ratio:auto;object-fit:contain}@media(max-width:700px){.work-image-row{grid-template-columns:1fr}}
 /* v25 publish flow */

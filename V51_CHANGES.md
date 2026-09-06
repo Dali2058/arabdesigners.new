@@ -1,0 +1,1 @@
+V51 — Content images keep their real aspect ratio. Removed forced 16:9/cropped sizing from Publish Studio content images and video preview. Only the main cover remains constrained/cropped to 16:9. A 1000×50 image now stays 1000×50 proportionally (scaled only if the editor width requires it).
