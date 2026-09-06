@@ -404,3 +404,11 @@ body:before{background:radial-gradient(circle at 50% -20%,rgba(63,111,255,.16),t
 .about-visual-grid p{font-size:10.5px;line-height:1.75;color:#b6bac4;margin:0;max-width:420px}
 @media(max-width:900px){.editorial-grid,.about-visual-grid{grid-template-columns:1fr 1fr}.editorial-card.editorial-wide,.about-visual-grid article:first-child{grid-column:1/-1}}
 @media(max-width:700px){
+/* V49: remove the creative/logo marquee strip completely */
+.home-marquee,
+.home-image-marquee,
+.image-marquee-track,
+.marquee-track,
+.marquee-image,
+.home-marquee + *:before,
+.home-marquee + *:after{display:none!important;height:0!important;min-height:0!important;max-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;animation:none!important}
