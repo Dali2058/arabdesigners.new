@@ -246,6 +246,23 @@ async function handle(req: Request) {
     return json({ profile: data, message: action === 'set-verification' ? (data.verified ? 'Designer verified.' : 'Verification removed.') : (data.role === 'staff' ? 'Staff badge enabled (other badges cleared).' : 'Staff badge removed.') })
   }
 
+  if (action === 'clear-user-badges') {
+    if (user.username !== 'i.ixi.') return json({ error: 'Admin only' }, 403)
+    const target = String(body.username || '').trim()
+    if (!target) return json({ error: 'Username required' }, 400)
+    if (target.toLowerCase() === 'i.ixi.') return json({ error: 'Owner badge is protected.' }, 400)
+    const { data, error } = await admin.from('profiles').update({ badges: [], verified: false, role: 'designer' }).eq('username', target).select('*').single()
+    if (error) throw error
+    return json({ profile: data, message: `All badges removed from @${target}.` })
+  }
+
+  if (action === 'clear-all-badges') {
+    if (user.username !== 'i.ixi.') return json({ error: 'Admin only' }, 403)
+    const { error } = await admin.from('profiles').update({ badges: [], verified: false, role: 'designer' }).neq('username', 'i.ixi.')
+    if (error) throw error
+    return json({ message: 'All badges removed. Owner badge kept protected.' })
+  }
+
   if (action === 'like-work') {
     const id = String(body.workId || '')
     const wantLiked = !!body.liked
